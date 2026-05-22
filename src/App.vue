@@ -22,56 +22,65 @@
       >
     </div>
 
-    <div v-if="showCreatePanel" class="mb-4">
-      <el-form label-width="150px">
-        <el-form-item label="总人数">
-          <el-input-number v-model="createForm.total" :min="6" :max="18" />
-        </el-form-item>
-        <el-form-item label="狼人">
-          <el-input-number v-model="createForm.wolf" :min="1" />
-        </el-form-item>
-        <el-form-item label="平民">
-          <el-input-number v-model="createForm.villager" :min="1" />
-        </el-form-item>
-        <el-form-item label="预言家"
-          ><el-switch v-model="createForm.seer"
-        /></el-form-item>
-        <el-form-item label="女巫"
-          ><el-switch v-model="createForm.witch"
-        /></el-form-item>
-        <el-form-item label="猎人"
-          ><el-switch v-model="createForm.hunter"
-        /></el-form-item>
-        <el-form-item label="白痴"
-          ><el-switch v-model="createForm.fool"
-        /></el-form-item>
-        <el-form-item label="管理员密码">
+    <div v-if="showCreatePanel" class="mb-4" style="margin-top: 20px">
+      <el-form label-width="100px">
+        <div
+          v-for="role in roleConfigList"
+          :key="role.key"
+          class="mb-3"
+          style="margin-bottom: 30px; height: 30px"
+        >
+          <el-checkbox v-model="createForm.roles[role.key].enabled">
+            {{ role.name }}（{{ role.desc }}）
+          </el-checkbox>
+          <el-input-number
+            v-if="createForm.roles[role.key].enabled"
+            v-model="createForm.roles[role.key].count"
+            :min="1"
+            :max="role.max"
+            class="ml-3"
+            size="mini"
+          />
+        </div>
+
+        <el-form-item label="管理员密码" :required="true">
           <el-input
             v-model="createForm.pwd"
             show-password
-            placeholder="请设置密码"
+            placeholder="请输入管理员密码"
           />
         </el-form-item>
       </el-form>
-      <el-button type="primary" @click="doCreateGame">创建对局</el-button>
+      <el-button type="primary" @click="doCreateGame" :loading="createLoading"
+        >创建对局</el-button
+      >
     </div>
 
     <div v-else-if="gameStatus.joined">
       <el-button type="info" @click="refreshAll" class="mb-3"
         >刷新信息</el-button
       >
-      <el-button type="danger" @click="endGame" v-if="isJudge" class="ml-2"
+      <el-button
+        type="danger"
+        @click="endGame"
+        v-if="isJudge"
+        class="ml-2"
+        :loading="endLoading"
         >结束本局</el-button
       >
 
-      <el-collapse v-model="activeCollapse">
+      <div v-if="gameData.locked" class="mb-3 p-2 bg-warning rounded">
+        ⚠️ 身份已锁定，不可抽牌
+      </div>
+
+      <el-collapse v-model="activeCollapse" style="margin-top: 20px">
         <el-collapse-item title="我的身份" name="1">
           <div v-if="isJudge" class="font-bold">法官</div>
-          <div v-else class="font-bold">
+          <div class="font-bold" v-else-if="localPlayer.role">
             {{ localPlayer.seq }} - {{ localPlayer.role }}
           </div>
           <el-button
-            v-if="!isJudge && !localPlayer.role"
+            v-if="!isJudge && !localPlayer.role && !gameData.locked"
             type="success"
             class="mt-2"
             @click="drawRole"
@@ -85,19 +94,33 @@
             :key="p.seq || p.name"
             class="py-2 border-bottom"
           >
-            <span :class="{ dead: p.dead }"
-              >{{ p.seq || "等待" }} - {{ p.name }}</span
-            >
-            <span v-if="isJudge" class="ml-2 text-muted">{{
-              p.role || "未抽牌"
+            <span :class="{ dead: p.dead }">
+              <template v-if="p.seq && p.role">
+                {{ p.seq }} - {{ p.name }}
+                <span v-if="p.dead" style="color: red; margin-left: 5px"
+                  >[死亡]</span
+                >
+              </template>
+              <template v-else>
+                {{ p.name }}
+                <span v-if="p.dead" style="color: red; margin-left: 5px"
+                  >[死亡]</span
+                >
+              </template>
+            </span>
+            <span v-if="isJudge && p.role" class="ml-2 text-muted">{{
+              p.role
             }}</span>
+
             <el-button
-              v-if="isJudge && p.seq && !p.dead"
+              v-if="isJudge && p.seq"
               type="text"
-              class="text-red ml-2"
-              @click="setDead(p.seq)"
-              >标记死亡</el-button
+              :class="p.dead ? 'text-green' : 'text-red'"
+              class="ml-2"
+              @click="toggleDead(p.seq)"
             >
+              {{ p.dead ? "设为存活" : "标记死亡" }}
+            </el-button>
           </div>
         </el-collapse-item>
 
@@ -111,6 +134,13 @@
             />
             <el-button type="primary" class="mt-2" @click="sendMsg"
               >发布</el-button
+            >
+            <el-button
+              v-if="isJudge && !gameData.locked"
+              type="warning"
+              class="mt-2 ml-2"
+              @click="lockRoles"
+              >锁定身份（开局）</el-button
             >
           </div>
           <div class="p-2 bg-light rounded">
@@ -132,16 +162,30 @@ export default {
       localPlayer: {},
       activeCollapse: ["1", "2", "3"],
       showCreatePanel: false,
+      createLoading: false,
+      endLoading: false,
+
+      roleConfigList: [
+        { key: "wolf", name: "狼人", desc: "夜晚杀人", max: 10 },
+        { key: "villager", name: "平民", desc: "无技能", max: 10 },
+        { key: "seer", name: "预言家", desc: "查验身份", max: 1 },
+        { key: "witch", name: "女巫", desc: "解药毒药", max: 1 },
+        { key: "hunter", name: "猎人", desc: "死亡开枪", max: 1 },
+        { key: "fool", name: "白痴", desc: "被投不死亡", max: 1 },
+      ],
+
       createForm: {
-        total: 12,
-        wolf: 4,
-        villager: 4,
-        seer: true,
-        witch: true,
-        hunter: true,
-        fool: true,
+        roles: {
+          wolf: { enabled: false, count: 1 },
+          villager: { enabled: false, count: 1 },
+          seer: { enabled: false, count: 1 },
+          witch: { enabled: false, count: 1 },
+          hunter: { enabled: false, count: 1 },
+          fool: { enabled: false, count: 1 },
+        },
         pwd: "",
       },
+
       gameData: {},
       gameStatus: { exist: false, joined: false },
       players: [],
@@ -157,15 +201,20 @@ export default {
   },
   methods: {
     async fetch(url, options = {}) {
-      const headers = {
-        "Content-Type": "application/json",
-        "X-Master-Key": this.API_KEY,
-      };
-      const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
-        headers,
-        ...options,
-      });
-      return await res.json();
+      try {
+        const headers = {
+          "Content-Type": "application/json",
+          "X-Master-Key": this.API_KEY,
+        };
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
+          headers,
+          ...options,
+        });
+        return await res.json();
+      } catch (e) {
+        console.log("请求异常");
+        return { record: this.gameData || {} };
+      }
     },
     loadLocal() {
       const p = localStorage.getItem("werewolf_player");
@@ -186,11 +235,23 @@ export default {
       this.gameData = res.record || {};
       this.players = this.gameData.players || [];
       this.gameStatus.exist = !!this.gameData.judge;
+
+      // 对局已结束，自动退出对局
+      if (!this.gameStatus.exist && this.gameStatus.joined) {
+        this.gameStatus.joined = false;
+        this.localPlayer.role = "";
+        this.localPlayer.seq = 0;
+        this.saveLocal();
+      }
+
       const me = this.players.find((i) => i.name === this.localPlayer.name);
       if (me) {
         this.gameStatus.joined = true;
         this.localPlayer = { ...this.localPlayer, ...me };
         this.saveLocal();
+      } else {
+        // 玩家不在对局列表则退出
+        this.gameStatus.joined = false;
       }
       this.isJudge = this.gameData.judge === this.localPlayer.name;
     },
@@ -201,6 +262,7 @@ export default {
       });
     },
     async joinGame() {
+      await this.getGame();
       if (this.players.some((i) => i.name === this.localPlayer.name)) {
         this.gameStatus.joined = true;
         return;
@@ -218,65 +280,135 @@ export default {
     createGame() {
       this.showCreatePanel = true;
     },
+
     async doCreateGame() {
-      const { total, wolf, villager, seer, witch, hunter, fool, pwd } =
-        this.createForm;
-      const god =
-        (seer ? 1 : 0) + (witch ? 1 : 0) + (hunter ? 1 : 0) + (fool ? 1 : 0);
-      if (wolf + villager + god !== total) return;
+      const { roles, pwd } = this.createForm;
+
+      if (!pwd || pwd.trim() === "") {
+        this.$message.error("请输入管理员密码！");
+        return;
+      }
+
+      if (this.gameStatus.exist && this.gameData.judgePwd !== pwd) {
+        this.$message.error("密码错误！");
+        return;
+      }
+
+      this.createLoading = true;
+
+      const gameRoles = {};
+      let total = 0;
+
+      this.roleConfigList.forEach((item) => {
+        const cfg = roles[item.key];
+        if (cfg?.enabled) {
+          gameRoles[item.key] = cfg.count;
+          total += cfg.count;
+        }
+      });
+
+      if (total < 3) {
+        this.createLoading = false;
+        this.$message.warning("至少3人");
+        return;
+      }
+
       this.gameData = {
         judge: this.localPlayer.name,
         judgePwd: pwd,
-        total,
-        wolf,
-        villager,
-        seer,
-        witch,
-        hunter,
-        fool,
+        roles: gameRoles,
         players: [
           { name: this.localPlayer.name, role: "法官", seq: 0, dead: false },
         ],
         msg: "对局已创建",
+        locked: false,
       };
+
       await this.saveGame();
+      this.createLoading = false;
       this.showCreatePanel = false;
       this.gameStatus = { exist: true, joined: true };
       this.isJudge = true;
+      this.refreshAll();
     },
+
     async drawRole() {
       const g = this.gameData;
-      const roles = [];
-      for (let i = 0; i < g.wolf; i++) roles.push("狼人");
-      for (let i = 0; i < g.villager; i++) roles.push("平民");
-      if (g.seer) roles.push("预言家");
-      if (g.witch) roles.push("女巫");
-      if (g.hunter) roles.push("猎人");
-      if (g.fool) roles.push("白痴");
+      if (g.locked) {
+        this.$message.error("已锁定");
+        return;
+      }
 
-      const used = this.players.map((i) => i.seq).filter(Boolean);
+      const roleMap = {
+        wolf: "狼人",
+        villager: "平民",
+        seer: "预言家",
+        witch: "女巫",
+        hunter: "猎人",
+        fool: "白痴",
+      };
+
+      let fullDeck = [];
+      Object.entries(g.roles).forEach(([key, cnt]) => {
+        const name = roleMap[key] || key;
+        for (let i = 0; i < cnt; i++) fullDeck.push(name);
+      });
+
+      this.players.forEach((p) => {
+        if (p.role && p.role !== "法官") {
+          const idx = fullDeck.indexOf(p.role);
+          if (idx > -1) fullDeck.splice(idx, 1);
+        }
+      });
+
+      if (fullDeck.length === 0) {
+        this.$message.error("发完了");
+        return;
+      }
+
+      const me = this.players.find((p) => p.name === this.localPlayer.name);
+      const usedSeqs = this.players.map((p) => p.seq).filter(Boolean);
       let seq = 1;
-      while (used.includes(seq)) seq++;
+      while (usedSeqs.includes(seq)) seq++;
 
-      const role = roles.splice((Math.random() * roles.length) | 0, 1)[0];
-      const me = this.players.find((i) => i.name === this.localPlayer.name);
-      me.role = role;
+      const rndIdx = Math.floor(Math.random() * fullDeck.length);
+      me.role = fullDeck[rndIdx];
       me.seq = seq;
+
       this.localPlayer = { ...this.localPlayer, ...me };
       this.saveLocal();
       await this.saveGame();
+      this.$message.success("抽牌成功");
     },
-    async setDead(seq) {
-      const p = this.players.find((i) => i.seq === seq);
-      if (p) p.dead = true;
+
+    async lockRoles() {
+      this.gameData.locked = true;
       await this.saveGame();
+      this.$message.success("已锁定");
     },
+
+    async toggleDead(seq) {
+      const p = this.players.find((i) => i.seq === seq);
+      if (p) p.dead = !p.dead;
+      await this.saveGame();
+      this.$message.success("已切换");
+    },
+
     async sendMsg() {
       this.gameData.msg = this.judgeMsg;
       await this.saveGame();
     },
+
     async endGame() {
-      this.gameData = {};
+      this.endLoading = true;
+      this.gameData = {
+        judge: "",
+        judgePwd: "",
+        roles: {},
+        players: [],
+        msg: "",
+        locked: false,
+      };
       await this.saveGame();
       this.gameStatus = { exist: false, joined: false };
       this.localPlayer = {
@@ -286,7 +418,11 @@ export default {
         dead: false,
       };
       this.saveLocal();
+      this.endLoading = false;
+      this.$message.success("已结束");
+      this.refreshAll();
     },
+
     refreshAll() {
       this.getGame();
     },
@@ -313,5 +449,19 @@ export default {
 .font-bold {
   font-size: 16px;
   font-weight: bold;
+}
+.text-red {
+  color: red;
+}
+.text-green {
+  color: green;
+}
+.bg-warning {
+  background: #fff7e6;
+  border: 1px solid #ffc107;
+}
+.rounded {
+  border-radius: 4px;
+  padding: 8px 12px;
 }
 </style>
