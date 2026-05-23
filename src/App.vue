@@ -101,20 +101,25 @@
           >
             <span :class="{ dead: p.dead }">
               <template v-if="p.seq && p.role">
-                {{ p.seq }} - {{ p.name }}:
-                <span v-if="p.dead" style="color: red; margin: 0 5px"
-                  >[死亡]</span
-                >
+                {{ p.seq }} - {{ p.name }}
+                <span v-if="p.dead" style="color: red; margin: 0 5px">
+                  [死亡]
+                </span>
               </template>
               <template v-else>
-                {{ p.name }}:
-                <span v-if="p.dead" style="color: red; margin-left: 5px"
-                  >[死亡]</span
-                >
+                {{ p.name }}
+                <span v-if="p.dead" style="color: red; margin-left: 5px">
+                  [死亡]
+                </span>
               </template>
             </span>
-            <span v-if="p.role" class="ml-2 text-muted">{{ p.role }}</span>
-            <span v-else class="ml-2 text-muted"> 旁观者 </span>
+            <span
+              v-if="(p.role && isJudge) || p.role === '上帝'"
+              class="ml-2 text-muted"
+            >
+              {{ `(${p.role})` }}
+            </span>
+            <span v-else-if="!p.role" class="ml-2 text-muted"> 旁观者 </span>
 
             <el-button
               v-if="isJudge && p.seq"
