@@ -2,34 +2,55 @@
   <div class="werewolf-game-container" v-loading="refreshLoading">
     <h2 class="text-center mb-4">狼人杀对局平台</h2>
 
+    <!-- 1. 没名字 / 正在改名：只在未加入对局时显示 -->
     <div
-      v-if="!localPlayer.name"
+      v-if="(!localPlayer.name || editingName) && !gameStatus.joined"
       class="mb-4"
-      style="display: flex; justify-content: center"
+      style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+      "
     >
       <el-input
         v-model="tempName"
         placeholder="请输入你的名字"
         style="width: 300px"
       ></el-input>
-      <el-button
-        type="primary"
-        @click="saveName"
-        class="ml-2"
-        style="margin-left: 20px"
-      >
-        确认进入
+      <el-button type="primary" @click="saveName">
+        {{ editingName ? "保存" : "确认进入" }}
       </el-button>
+      <el-button v-if="editingName" @click="cancelEditName"> 取消 </el-button>
     </div>
 
+    <!-- 2. 有名字、未加入对局：显示欢迎+改名+创建/加入 -->
     <div
-      v-else-if="!gameStatus.joined"
-      style="display: flex; justify-content: center"
+      v-else-if="localPlayer.name && !gameStatus.joined"
+      style="text-align: center; margin-bottom: 16px"
     >
-      <el-button type="success" @click="createGame"> 创建对局 </el-button>
-      <el-button type="warning" @click="joinGame">加入对局</el-button>
+      <div style="font-size: 16px; margin-bottom: 10px">
+        你好，<span style="color: #1890ff; font-weight: bold">{{
+          localPlayer.name
+        }}</span>
+        <el-button
+          type="text"
+          icon="el-icon-edit"
+          @click="editName"
+          style="margin-left: 4px"
+        >
+        </el-button>
+      </div>
+
+      <div style="display: flex; justify-content: center; margin-top: 10px">
+        <el-button type="success" @click="createGame"> 创建对局 </el-button>
+        <el-button type="warning" @click="joinGame" style="margin-left: 10px">
+          加入对局
+        </el-button>
+      </div>
     </div>
 
+    <!-- 3. 创建对局面板 -->
     <div v-if="showCreatePanel" class="mb-4" style="margin-top: 20px">
       <el-form label-width="100px">
         <div
@@ -64,6 +85,7 @@
       >
     </div>
 
+    <!-- 4. 已加入对局：完全隐藏改名相关 -->
     <div v-else-if="gameStatus.joined">
       <el-button type="info" @click="refreshAll" class="mb-3"
         >刷新信息</el-button
@@ -86,7 +108,6 @@
           <div v-if="isJudge" class="font-bold">上帝</div>
           <div class="font-bold" v-else-if="localPlayer.role">
             {{ localPlayer.seq }} - {{ localPlayer.role }}
-            <!-- 👇 新增：身份描述（灰色小字，不影响布局） -->
             <div
               style="
                 font-size: 14px;
@@ -148,7 +169,6 @@
           </div>
         </el-collapse-item>
         <el-collapse-item title="笔记本" name="3">
-          <!-- 一个文本框 -->
           <el-input
             v-model="localPlayer.note"
             type="textarea"
@@ -193,11 +213,13 @@ export default {
     return {
       tempName: "",
       localPlayer: {},
-      activeCollapse: ["1", "2", "3"],
+      activeCollapse: ["1", "2", "3", "4"],
       showCreatePanel: false,
       createLoading: false,
       endLoading: false,
       refreshLoading: false,
+      editingName: false,
+      originalName: "",
 
       roleConfigList: [
         { key: "wolf", name: "狼人", desc: "夜晚杀人", max: 10 },
@@ -234,10 +256,20 @@ export default {
     this.getGame();
   },
   methods: {
-    // 👇 新增：获取身份描述（只加了这一个函数）
     getRoleDesc(roleName) {
       const role = this.roleConfigList.find((item) => item.name === roleName);
       return role ? role.desc : "暂无描述";
+    },
+
+    editName() {
+      this.originalName = this.localPlayer.name;
+      this.tempName = this.localPlayer.name;
+      this.editingName = true;
+    },
+
+    cancelEditName() {
+      this.editingName = false;
+      this.tempName = this.originalName;
     },
 
     async fetch(url, options = {}) {
@@ -266,9 +298,11 @@ export default {
       localStorage.setItem("werewolf_player", JSON.stringify(this.localPlayer));
     },
     saveName() {
-      if (!this.tempName) return;
-      this.localPlayer.name = this.tempName;
+      if (!this.tempName.trim()) return;
+      this.localPlayer.name = this.tempName.trim();
       this.saveLocal();
+      this.editingName = false;
+      this.tempName = "";
     },
     async getGame() {
       this.refreshLoading = true;
@@ -277,7 +311,6 @@ export default {
       this.players = this.gameData.players || [];
       this.gameStatus.exist = !!this.gameData.judge;
 
-      // 对局已结束，自动退出对局
       if (!this.gameStatus.exist && this.gameStatus.joined) {
         this.gameStatus.joined = false;
         this.localPlayer.role = "";
@@ -291,7 +324,6 @@ export default {
         this.localPlayer = { ...this.localPlayer, ...me };
         this.saveLocal();
       } else {
-        // 玩家不在对局列表则退出
         this.gameStatus.joined = false;
       }
       this.isJudge = this.gameData.judge === this.localPlayer.name;
@@ -305,13 +337,10 @@ export default {
     },
     async joinGame() {
       await this.getGame();
-
-      // 👇 新增：无对局时弹出提示
       if (!this.gameStatus.exist) {
         this.$message.warning("当前暂无对局，请先创建对局");
         return;
       }
-
       if (this.players.some((i) => i.name === this.localPlayer.name)) {
         this.gameStatus.joined = true;
         return;
@@ -332,22 +361,17 @@ export default {
 
     async doCreateGame() {
       const { roles, pwd } = this.createForm;
-
       if (!pwd || pwd.trim() === "") {
         this.$message.error("请输入管理员密码！");
         return;
       }
-
       if (this.gameStatus.exist && this.gameData.judgePwd !== pwd) {
         this.$message.error("密码错误！");
         return;
       }
-
       this.createLoading = true;
-
       const gameRoles = {};
       let total = 0;
-
       this.roleConfigList.forEach((item) => {
         const cfg = roles[item.key];
         if (cfg?.enabled) {
@@ -355,13 +379,11 @@ export default {
           total += cfg.count;
         }
       });
-
       if (total < 3) {
         this.createLoading = false;
         this.$message.warning("至少3人");
         return;
       }
-
       this.gameData = {
         judge: this.localPlayer.name,
         judgePwd: pwd,
@@ -372,7 +394,6 @@ export default {
         msg: "对局已创建",
         locked: false,
       };
-
       await this.saveGame();
       this.createLoading = false;
       this.showCreatePanel = false;
@@ -387,7 +408,6 @@ export default {
         this.$message.error("已锁定");
         return;
       }
-
       const roleMap = {
         wolf: "狼人",
         villager: "平民",
@@ -396,34 +416,28 @@ export default {
         hunter: "猎人",
         fool: "白痴",
       };
-
       let fullDeck = [];
       Object.entries(g.roles).forEach(([key, cnt]) => {
         const name = roleMap[key] || key;
         for (let i = 0; i < cnt; i++) fullDeck.push(name);
       });
-
       this.players.forEach((p) => {
         if (p.role && p.role !== "上帝") {
           const idx = fullDeck.indexOf(p.role);
           if (idx > -1) fullDeck.splice(idx, 1);
         }
       });
-
       if (fullDeck.length === 0) {
         this.$message.error("发完了");
         return;
       }
-
       const me = this.players.find((p) => p.name === this.localPlayer.name);
       const usedSeqs = this.players.map((p) => p.seq).filter(Boolean);
       let seq = 1;
       while (usedSeqs.includes(seq)) seq++;
-
       const rndIdx = Math.floor(Math.random() * fullDeck.length);
       me.role = fullDeck[rndIdx];
       me.seq = seq;
-
       this.localPlayer = { ...this.localPlayer, ...me };
       this.saveLocal();
       await this.saveGame();
@@ -501,9 +515,9 @@ export default {
 }
 .text-red {
   color: red;
-  text-green {
-    color: green;
-  }
+}
+.text-green {
+  color: green;
 }
 .bg-warning {
   background: #fff7e6;
