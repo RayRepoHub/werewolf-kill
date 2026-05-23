@@ -309,13 +309,23 @@ export default {
       const res = await this.fetch();
       this.gameData = res.record || {};
       this.players = this.gameData.players || [];
+
+      // 记录刷新前是否在对局中
+      const beforeJoined = this.gameStatus.joined;
       this.gameStatus.exist = !!this.gameData.judge;
 
-      if (!this.gameStatus.exist && this.gameStatus.joined) {
+      // 核心：对局已结束，自动退出并提示
+      if (beforeJoined && !this.gameStatus.exist) {
         this.gameStatus.joined = false;
-        this.localPlayer.role = "";
-        this.localPlayer.seq = 0;
+        this.localPlayer = {
+          name: this.localPlayer.name,
+          role: "",
+          seq: 0,
+          dead: false,
+          note: this.localPlayer.note || "",
+        };
         this.saveLocal();
+        this.$message.info("上帝已结束对局");
       }
 
       const me = this.players.find((i) => i.name === this.localPlayer.name);
@@ -464,6 +474,7 @@ export default {
 
     async endGame() {
       this.endLoading = true;
+      // 清空所有对局数据
       this.gameData = {
         judge: "",
         judgePwd: "",
@@ -473,16 +484,20 @@ export default {
         locked: false,
       };
       await this.saveGame();
+
+      // 上帝自己也退出对局
       this.gameStatus = { exist: false, joined: false };
       this.localPlayer = {
         name: this.localPlayer.name,
         role: "",
         seq: 0,
         dead: false,
+        note: this.localPlayer.note || "",
       };
       this.saveLocal();
+
       this.endLoading = false;
-      this.$message.success("已结束");
+      this.$message.success("已成功结束本局");
       this.refreshAll();
     },
 
