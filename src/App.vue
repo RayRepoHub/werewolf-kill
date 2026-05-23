@@ -75,7 +75,7 @@
 
       <el-collapse v-model="activeCollapse" style="margin-top: 20px">
         <el-collapse-item title="我的身份" name="1">
-          <div v-if="isJudge" class="font-bold">法官</div>
+          <div v-if="isJudge" class="font-bold">上帝</div>
           <div class="font-bold" v-else-if="localPlayer.role">
             {{ localPlayer.seq }} - {{ localPlayer.role }}
           </div>
@@ -97,7 +97,7 @@
             <span :class="{ dead: p.dead }">
               <template v-if="p.seq && p.role">
                 {{ p.seq }} - {{ p.name }}
-                <span v-if="p.dead" style="color: red; margin-left: 5px"
+                <span v-if="p.dead" style="color: red; margin: 0 5px"
                   >[死亡]</span
                 >
               </template>
@@ -118,19 +118,29 @@
               :class="p.dead ? 'text-green' : 'text-red'"
               class="ml-2"
               @click="toggleDead(p.seq)"
+              style="margin-left: 10px"
             >
               {{ p.dead ? "设为存活" : "标记死亡" }}
             </el-button>
           </div>
         </el-collapse-item>
-
-        <el-collapse-item title="消息" name="3">
+        <el-collapse-item title="笔记本" name="3">
+          <!-- 一个文本框 -->
+          <el-input
+            v-model="localPlayer.note"
+            type="textarea"
+            rows="6"
+            placeholder="请输入"
+          />
+        </el-collapse-item>
+        <el-collapse-item title="上帝广播" name="4">
           <div v-if="isJudge" class="mb-2">
             <el-input
               v-model="judgeMsg"
               type="textarea"
               rows="2"
-              placeholder="法官公告"
+              placeholder="请输入"
+              style="margin-bottom: 20px"
             />
             <el-button type="primary" class="mt-2" @click="sendMsg"
               >发布</el-button
@@ -144,7 +154,7 @@
             >
           </div>
           <div class="p-2 bg-light rounded">
-            {{ gameData.msg || "暂无公告" }}
+            {{ gameData.msg || "暂无内容" }}
           </div>
         </el-collapse-item>
       </el-collapse>
@@ -318,7 +328,7 @@ export default {
         judgePwd: pwd,
         roles: gameRoles,
         players: [
-          { name: this.localPlayer.name, role: "法官", seq: 0, dead: false },
+          { name: this.localPlayer.name, role: "上帝", seq: 0, dead: false },
         ],
         msg: "对局已创建",
         locked: false,
@@ -355,7 +365,7 @@ export default {
       });
 
       this.players.forEach((p) => {
-        if (p.role && p.role !== "法官") {
+        if (p.role && p.role !== "上帝") {
           const idx = fullDeck.indexOf(p.role);
           if (idx > -1) fullDeck.splice(idx, 1);
         }
