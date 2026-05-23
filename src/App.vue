@@ -8,9 +8,14 @@
         placeholder="请输入你的名字"
         style="width: 300px"
       ></el-input>
-      <el-button type="primary" @click="saveName" class="ml-2"
-        >确认进入</el-button
+      <el-button
+        type="primary"
+        @click="saveName"
+        class="ml-2"
+        style="margin-left: 20px"
       >
+        确认进入
+      </el-button>
     </div>
 
     <div v-else-if="!gameStatus.joined" class="mb-4">
@@ -96,21 +101,20 @@
           >
             <span :class="{ dead: p.dead }">
               <template v-if="p.seq && p.role">
-                {{ p.seq }} - {{ p.name }}
+                {{ p.seq }} - {{ p.name }}:
                 <span v-if="p.dead" style="color: red; margin: 0 5px"
                   >[死亡]</span
                 >
               </template>
               <template v-else>
-                {{ p.name }}
+                {{ p.name }}:
                 <span v-if="p.dead" style="color: red; margin-left: 5px"
                   >[死亡]</span
                 >
               </template>
             </span>
-            <span v-if="isJudge && p.role" class="ml-2 text-muted">{{
-              p.role
-            }}</span>
+            <span v-if="p.role" class="ml-2 text-muted">{{ p.role }}</span>
+            <span v-else class="ml-2 text-muted"> 旁观者 </span>
 
             <el-button
               v-if="isJudge && p.seq"
