@@ -83,6 +83,17 @@
           <div v-if="isJudge" class="font-bold">上帝</div>
           <div class="font-bold" v-else-if="localPlayer.role">
             {{ localPlayer.seq }} - {{ localPlayer.role }}
+            <!-- 👇 新增：身份描述（灰色小字，不影响布局） -->
+            <div
+              style="
+                font-size: 14px;
+                color: #666;
+                margin-top: 4px;
+                font-weight: normal;
+              "
+            >
+              {{ getRoleDesc(localPlayer.role) }}
+            </div>
           </div>
           <el-button
             v-if="!isJudge && !localPlayer.role && !gameData.locked"
@@ -219,6 +230,12 @@ export default {
     this.getGame();
   },
   methods: {
+    // 👇 新增：获取身份描述（只加了这一个函数）
+    getRoleDesc(roleName) {
+      const role = this.roleConfigList.find((item) => item.name === roleName);
+      return role ? role.desc : "暂无描述";
+    },
+
     async fetch(url, options = {}) {
       try {
         const headers = {
