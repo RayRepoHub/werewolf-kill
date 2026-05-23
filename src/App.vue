@@ -1,8 +1,12 @@
 <template>
-  <div class="werewolf-game-container">
+  <div class="werewolf-game-container" v-loading="refreshLoading">
     <h2 class="text-center mb-4">狼人杀对局平台</h2>
 
-    <div v-if="!localPlayer.name" class="mb-4">
+    <div
+      v-if="!localPlayer.name"
+      class="mb-4"
+      style="display: flex; justify-content: center"
+    >
       <el-input
         v-model="tempName"
         placeholder="请输入你的名字"
@@ -18,13 +22,12 @@
       </el-button>
     </div>
 
-    <div v-else-if="!gameStatus.joined" class="mb-4">
-      <el-button type="success" @click="joinGame" :disabled="!gameStatus.exist"
-        >加入已有对局</el-button
-      >
-      <el-button type="warning" @click="createGame" class="ml-2"
-        >重新创建对局</el-button
-      >
+    <div
+      v-else-if="!gameStatus.joined"
+      style="display: flex; justify-content: center"
+    >
+      <el-button type="success" @click="createGame"> 创建对局 </el-button>
+      <el-button type="warning" @click="joinGame">加入对局</el-button>
     </div>
 
     <div v-if="showCreatePanel" class="mb-4" style="margin-top: 20px">
@@ -194,6 +197,7 @@ export default {
       showCreatePanel: false,
       createLoading: false,
       endLoading: false,
+      refreshLoading: false,
 
       roleConfigList: [
         { key: "wolf", name: "狼人", desc: "夜晚杀人", max: 10 },
@@ -267,6 +271,7 @@ export default {
       this.saveLocal();
     },
     async getGame() {
+      this.refreshLoading = true;
       const res = await this.fetch();
       this.gameData = res.record || {};
       this.players = this.gameData.players || [];
@@ -290,6 +295,7 @@ export default {
         this.gameStatus.joined = false;
       }
       this.isJudge = this.gameData.judge === this.localPlayer.name;
+      this.refreshLoading = false;
     },
     async saveGame() {
       await this.fetch("", {
@@ -299,6 +305,13 @@ export default {
     },
     async joinGame() {
       await this.getGame();
+
+      // 👇 新增：无对局时弹出提示
+      if (!this.gameStatus.exist) {
+        this.$message.warning("当前暂无对局，请先创建对局");
+        return;
+      }
+
       if (this.players.some((i) => i.name === this.localPlayer.name)) {
         this.gameStatus.joined = true;
         return;
@@ -488,9 +501,9 @@ export default {
 }
 .text-red {
   color: red;
-}
-.text-green {
-  color: green;
+  text-green {
+    color: green;
+  }
 }
 .bg-warning {
   background: #fff7e6;
