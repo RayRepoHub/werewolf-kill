@@ -2,7 +2,6 @@
   <div class="werewolf-game-container" v-loading="refreshLoading">
     <h2 class="text-center mb-4">狼人杀对局平台</h2>
 
-    <!-- 1. 没名字 / 正在改名：只在未加入对局时显示 -->
     <div
       v-if="(!localPlayer.name || editingName) && !gameStatus.joined"
       class="mb-4"
@@ -24,7 +23,6 @@
       <el-button v-if="editingName" @click="cancelEditName"> 取消 </el-button>
     </div>
 
-    <!-- 2. 有名字、未加入对局：显示欢迎+改名+创建/加入 -->
     <div
       v-else-if="localPlayer.name && !gameStatus.joined"
       style="text-align: center; margin-bottom: 16px"
@@ -47,26 +45,26 @@
         <el-button type="warning" @click="joinGame" style="margin-left: 10px">
           加入对局
         </el-button>
+        <el-button type="info" @click="askGameSetting"> 对局设置 </el-button>
       </div>
     </div>
 
-    <!-- 3. 创建对局面板 -->
     <div v-if="showCreatePanel" class="mb-4" style="margin-top: 20px">
       <el-form label-width="100px">
         <div
           v-for="role in roleConfigList"
-          :key="role.key"
+          v-show="role.enabled"
+          :key="role.name"
           class="mb-3"
           style="margin-bottom: 30px; height: 30px"
         >
-          <el-checkbox v-model="createForm.roles[role.key].enabled">
+          <el-checkbox v-model="createForm.roles[role.name].enabled">
             {{ role.name }}（{{ role.desc }}）
           </el-checkbox>
           <el-input-number
-            v-if="createForm.roles[role.key].enabled"
-            v-model="createForm.roles[role.key].count"
+            v-if="createForm.roles[role.name].enabled"
+            v-model="createForm.roles[role.name].count"
             :min="1"
-            :max="role.max"
             class="ml-3"
             size="mini"
           />
@@ -85,7 +83,6 @@
       >
     </div>
 
-    <!-- 4. 已加入对局：完全隐藏改名相关 -->
     <div v-else-if="gameStatus.joined">
       <el-button type="info" @click="refreshAll" class="mb-3"
         >刷新信息</el-button
@@ -202,13 +199,27 @@
         </el-collapse-item>
       </el-collapse>
     </div>
+
+    <el-dialog
+      title="身份配置"
+      :visible.sync="gameSettingDialog"
+      :fullscreen="true"
+    >
+      <GameSetting ref="setting" :initial-roles="roleConfigList" />
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="gameSettingDialog = false">取 消</el-button>
+        <el-button type="primary" @click="saveGameSetting"> 确 定 </el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import GameSetting from "@/GameSetting.vue";
 /* eslint-disable vue/multi-word-component-names */
 export default {
   name: "WerewolfGame",
+  components: { GameSetting },
   data() {
     return {
       tempName: "",
@@ -221,26 +232,8 @@ export default {
       editingName: false,
       originalName: "",
 
-      roleConfigList: [
-        { key: "wolf", name: "狼人", desc: "夜晚杀人", max: 10 },
-        { key: "villager", name: "平民", desc: "无技能", max: 10 },
-        { key: "seer", name: "预言家", desc: "查验身份", max: 1 },
-        { key: "witch", name: "女巫", desc: "解药毒药", max: 1 },
-        { key: "hunter", name: "猎人", desc: "死亡开枪", max: 1 },
-        { key: "fool", name: "白痴", desc: "被投不死亡", max: 1 },
-      ],
-
-      createForm: {
-        roles: {
-          wolf: { enabled: false, count: 1 },
-          villager: { enabled: false, count: 1 },
-          seer: { enabled: false, count: 1 },
-          witch: { enabled: false, count: 1 },
-          hunter: { enabled: false, count: 1 },
-          fool: { enabled: false, count: 1 },
-        },
-        pwd: "",
-      },
+      roleConfigList: [],
+      createForm: { roles: {}, pwd: "" },
 
       gameData: {},
       gameStatus: { exist: false, joined: false },
@@ -249,13 +242,74 @@ export default {
       judgeMsg: "",
       BIN_ID: "6a0f0ecb6610dd3ae88104e3",
       API_KEY: "$2a$10$Z9GMvjcEgBICbobvUeAOp.m7Wg/8FiUiblHXiv7XfVrpxAMEwOz3W",
+      gameSettingDialog: false,
+
+      // 身份独立配置BIN 👇 把这里换成你新建的那个身份BIN ID
+      settingBinId: "6a12952e6610dd3ae897b04a",
     };
   },
   mounted() {
     this.loadLocal();
+    this.getRoleConfig();
     this.getGame();
   },
   methods: {
+    // 读取身份配置（独立BIN）
+    async getRoleConfig() {
+      try {
+        const res = await fetch(
+          `https://api.jsonbin.io/v3/b/${this.settingBinId}`,
+          {
+            headers: { "X-Master-Key": this.API_KEY },
+          }
+        );
+        const data = await res.json();
+        this.roleConfigList = data.record || [];
+        this.rebuildCreateForm();
+      } catch (e) {
+        console.log(e);
+      }
+    },
+
+    // 保存身份配置（点确定才保存）
+    async saveGameSetting() {
+      const final = this.$refs.setting.getFinalList();
+      await fetch(`https://api.jsonbin.io/v3/b/${this.settingBinId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": this.API_KEY,
+        },
+        body: JSON.stringify(final),
+      });
+      this.roleConfigList = final;
+      this.rebuildCreateForm();
+      this.gameSettingDialog = false;
+      this.$message.success("配置已保存");
+    },
+
+    // 重建创建对局表单（永远最新）
+    rebuildCreateForm() {
+      const roles = {};
+      this.roleConfigList.forEach((r) => {
+        roles[r.name] = { enabled: false, count: 1 };
+      });
+      this.createForm.roles = roles;
+    },
+
+    askGameSetting() {
+      this.$prompt("请输入管理员密码", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+      }).then(({ value }) => {
+        if (value === "970611") {
+          this.gameSettingDialog = true;
+        } else {
+          this.$message.error("密码错误");
+        }
+      });
+    },
+
     getRoleDesc(roleName) {
       const role = this.roleConfigList.find((item) => item.name === roleName);
       return role ? role.desc : "暂无描述";
@@ -310,11 +364,9 @@ export default {
       this.gameData = res.record || {};
       this.players = this.gameData.players || [];
 
-      // 记录刷新前是否在对局中
       const beforeJoined = this.gameStatus.joined;
       this.gameStatus.exist = !!this.gameData.judge;
 
-      // 核心：对局已结束，自动退出并提示
       if (beforeJoined && !this.gameStatus.exist) {
         this.gameStatus.joined = false;
         this.localPlayer = {
@@ -365,6 +417,7 @@ export default {
       await this.saveGame();
       this.gameStatus.joined = true;
     },
+
     createGame() {
       this.showCreatePanel = true;
     },
@@ -383,9 +436,9 @@ export default {
       const gameRoles = {};
       let total = 0;
       this.roleConfigList.forEach((item) => {
-        const cfg = roles[item.key];
+        const cfg = roles[item.name];
         if (cfg?.enabled) {
-          gameRoles[item.key] = cfg.count;
+          gameRoles[item.name] = cfg.count;
           total += cfg.count;
         }
       });
@@ -418,17 +471,8 @@ export default {
         this.$message.error("已锁定");
         return;
       }
-      const roleMap = {
-        wolf: "狼人",
-        villager: "平民",
-        seer: "预言家",
-        witch: "女巫",
-        hunter: "猎人",
-        fool: "白痴",
-      };
       let fullDeck = [];
-      Object.entries(g.roles).forEach(([key, cnt]) => {
-        const name = roleMap[key] || key;
+      Object.entries(g.roles).forEach(([name, cnt]) => {
         for (let i = 0; i < cnt; i++) fullDeck.push(name);
       });
       this.players.forEach((p) => {
@@ -461,7 +505,7 @@ export default {
     },
 
     async toggleDead(seq) {
-      const p = this.players.find((i) => i.seq === seq);
+      const p = this.players.find((i) => seq === i.seq);
       if (p) p.dead = !p.dead;
       await this.saveGame();
       this.$message.success("已切换");
@@ -474,7 +518,6 @@ export default {
 
     async endGame() {
       this.endLoading = true;
-      // 清空所有对局数据
       this.gameData = {
         judge: "",
         judgePwd: "",
@@ -484,8 +527,6 @@ export default {
         locked: false,
       };
       await this.saveGame();
-
-      // 上帝自己也退出对局
       this.gameStatus = { exist: false, joined: false };
       this.localPlayer = {
         name: this.localPlayer.name,
@@ -495,7 +536,6 @@ export default {
         note: this.localPlayer.note || "",
       };
       this.saveLocal();
-
       this.endLoading = false;
       this.$message.success("已成功结束本局");
       this.refreshAll();
