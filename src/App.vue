@@ -119,7 +119,10 @@
       </div>
 
       <el-collapse v-model="activeCollapse" style="margin-top: 20px">
-        <el-collapse-item title="我的身份" name="1">
+        <el-collapse-item name="1">
+          <template slot="title">
+            我的身份<i class="el-icon-s-custom" style="margin-left: 4px" />
+          </template>
           <div v-if="isJudge" class="font-bold">上帝</div>
           <div class="font-bold" v-else-if="localPlayer.role">
             {{ localPlayer.seq }} - {{ localPlayer.role }}
@@ -143,7 +146,10 @@
           >
         </el-collapse-item>
 
-        <el-collapse-item title="成员列表" name="2">
+        <el-collapse-item name="2">
+          <template slot="title">
+            成员列表<i class="el-icon-s-order" style="margin-left: 4px" />
+          </template>
           <div
             v-for="p in players"
             :key="p.seq || p.name"
@@ -183,7 +189,10 @@
             </el-button>
           </div>
         </el-collapse-item>
-        <el-collapse-item title="笔记本" name="3">
+        <el-collapse-item name="3">
+          <template slot="title">
+            游戏笔记<i class="el-icon-info" style="margin-left: 4px" />
+          </template>
           <el-input
             v-model="localPlayer.note"
             type="textarea"
@@ -191,7 +200,10 @@
             placeholder="请输入"
           />
         </el-collapse-item>
-        <el-collapse-item title="上帝广播" name="4">
+        <el-collapse-item name="4">
+          <template slot="title">
+            上帝广播<i class="el-icon-message-solid" style="margin-left: 4px" />
+          </template>
           <div v-if="isJudge" class="mb-2">
             <el-input
               v-model="judgeMsg"
