@@ -56,18 +56,30 @@
           v-show="role.enabled"
           :key="role.name"
           class="mb-3"
-          style="margin-bottom: 30px; height: 30px"
+          style="margin-bottom: 20px"
         >
-          <el-checkbox v-model="createForm.roles[role.name].enabled">
-            {{ role.name }}（{{ role.desc }}）
-          </el-checkbox>
-          <el-input-number
-            v-if="createForm.roles[role.name].enabled"
-            v-model="createForm.roles[role.name].count"
-            :min="1"
-            class="ml-3"
-            size="mini"
-          />
+          <div
+            style="
+              width: 100%;
+              height: 30px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 4px;
+            "
+          >
+            <el-checkbox v-model="createForm.roles[role.name].enabled">
+              {{ role.name }}
+            </el-checkbox>
+            <el-input-number
+              v-if="createForm.roles[role.name].enabled"
+              v-model="createForm.roles[role.name].count"
+              :min="1"
+              class="ml-3"
+              size="mini"
+            />
+          </div>
+          <div style="font-size: 14px">（{{ role.desc || "暂无描述" }}）</div>
         </div>
 
         <el-form-item label="管理员密码" :required="true">
