@@ -447,7 +447,7 @@ export default {
         this.$message.error("请输入管理员密码！");
         return;
       }
-      if (this.gameStatus.exist && this.gameData.judgePwd !== pwd) {
+      if (pwd !== this.ADMIN_PASSWORD) {
         this.$message.error("密码错误！");
         return;
       }
