@@ -78,9 +78,15 @@
           />
         </el-form-item>
       </el-form>
-      <el-button type="primary" @click="doCreateGame" :loading="createLoading">
-        创建对局
-      </el-button>
+      <div style="width: 100%; display: flex; justify-content: end">
+        <el-button
+          type="primary"
+          @click="doCreateGame"
+          :loading="createLoading"
+        >
+          创建
+        </el-button>
+      </div>
     </div>
 
     <div v-else-if="gameStatus.joined">
@@ -151,7 +157,7 @@
             >
               {{ `(${p.role})` }}
             </span>
-            <span v-else-if="!p.role" class="ml-2 text-muted"> 旁观者 </span>
+            <span v-else-if="!p.role" class="ml-2 text-muted"> (旁观者) </span>
 
             <el-button
               v-if="isJudge && p.seq"
@@ -185,14 +191,14 @@
             <el-button type="primary" class="mt-2" @click="sendMsg">
               发布
             </el-button>
-            <el-button
+            <!-- <el-button
               v-if="isJudge && !gameData.locked"
               type="warning"
               class="mt-2 ml-2"
               @click="lockRoles"
             >
               锁定身份（开局）
-            </el-button>
+            </el-button> -->
           </div>
           <div class="p-2 bg-light rounded">
             {{ gameData.msg || "暂无内容" }}
@@ -210,7 +216,13 @@
       <GameSetting ref="setting" :initial-roles="roleConfigList" />
       <span slot="footer" class="dialog-footer">
         <el-button @click="roleSettingVisible = false">取 消</el-button>
-        <el-button type="primary" @click="saveGameSetting"> 保 存 </el-button>
+        <el-button
+          type="primary"
+          :loading="saveRoleLoading"
+          @click="saveGameSetting"
+        >
+          保 存
+        </el-button>
       </span>
     </el-dialog>
   </div>
@@ -250,6 +262,7 @@ export default {
 
       // 身份独立配置BIN 👇 把这里换成你新建的那个身份BIN ID
       settingBinId: "6a12952e6610dd3ae897b04a",
+      saveRoleLoading: false,
     };
   },
   mounted() {
@@ -277,6 +290,7 @@ export default {
 
     // 保存身份配置（点确定才保存）
     async saveGameSetting() {
+      this.saveRoleLoading = true;
       const final = this.$refs.setting.getFinalList();
       await fetch(`https://api.jsonbin.io/v3/b/${this.settingBinId}`, {
         method: "PUT",
@@ -288,6 +302,7 @@ export default {
       });
       this.roleConfigList = final;
       this.rebuildCreateForm();
+      this.saveRoleLoading = false;
       this.roleSettingVisible = false;
       this.$message.success("配置已保存");
     },
