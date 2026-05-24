@@ -299,24 +299,34 @@ export default {
       });
       this.createForm.roles = roles;
     },
+    async checkAdminPassword() {
+      try {
+        const { value } = await this.$prompt("请输入管理员密码", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          inputRequired: true,
+          inputType: "password",
+          closeOnClickModal: false,
+          inputPattern: /\S/,
+          inputErrorMessage: "密码不能为空",
+        });
 
-    async askGameSetting() {
-      const { value } = await this.$prompt("请输入管理员密码", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        inputRequired: true,
-        inputType: "password",
-        closeOnClickModal: false,
-        inputPattern: /\S/,
-        inputErrorMessage: "密码不能为空",
-      });
-
-      const isOk = value === this.ADMIN_PASSWORD;
-      if (isOk) {
-        this.gameSettingDialog = true;
-      } else {
-        this.$message.error("密码错误");
+        const isOk = value === this.ADMIN_PASSWORD;
+        if (isOk) {
+          return true;
+        } else {
+          this.$message.error("密码错误");
+          return false;
+        }
+      } catch {
+        // 取消输入直接终止
+        return false;
       }
+    },
+    async askGameSetting() {
+      const pass = await this.checkAdminPassword();
+      if (!pass) return;
+      this.gameSettingDialog = true;
     },
 
     getRoleDesc(roleName) {
