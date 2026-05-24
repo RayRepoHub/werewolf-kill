@@ -78,15 +78,15 @@
           />
         </el-form-item>
       </el-form>
-      <el-button type="primary" @click="doCreateGame" :loading="createLoading"
-        >创建对局</el-button
-      >
+      <el-button type="primary" @click="doCreateGame" :loading="createLoading">
+        创建对局
+      </el-button>
     </div>
 
     <div v-else-if="gameStatus.joined">
-      <el-button type="info" @click="refreshAll" class="mb-3"
-        >刷新信息</el-button
-      >
+      <el-button type="info" @click="refreshAll" class="mb-3">
+        刷新信息
+      </el-button>
       <el-button
         type="danger"
         @click="endGame"
@@ -182,16 +182,17 @@
               placeholder="请输入"
               style="margin-bottom: 20px"
             />
-            <el-button type="primary" class="mt-2" @click="sendMsg"
-              >发布</el-button
-            >
+            <el-button type="primary" class="mt-2" @click="sendMsg">
+              发布
+            </el-button>
             <el-button
               v-if="isJudge && !gameData.locked"
               type="warning"
               class="mt-2 ml-2"
               @click="lockRoles"
-              >锁定身份（开局）</el-button
             >
+              锁定身份（开局）
+            </el-button>
           </div>
           <div class="p-2 bg-light rounded">
             {{ gameData.msg || "暂无内容" }}
@@ -216,12 +217,14 @@
 
 <script>
 import GameSetting from "@/GameSetting.vue";
+import { ADMIN_PASSWORD } from "@/const.js";
 /* eslint-disable vue/multi-word-component-names */
 export default {
   name: "WerewolfGame",
   components: { GameSetting },
   data() {
     return {
+      ADMIN_PASSWORD: ADMIN_PASSWORD,
       tempName: "",
       localPlayer: {},
       activeCollapse: ["1", "2", "3", "4"],
@@ -297,17 +300,23 @@ export default {
       this.createForm.roles = roles;
     },
 
-    askGameSetting() {
-      this.$prompt("请输入管理员密码", "提示", {
+    async askGameSetting() {
+      const { value } = await this.$prompt("请输入管理员密码", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
-      }).then(({ value }) => {
-        if (value === "970611") {
-          this.gameSettingDialog = true;
-        } else {
-          this.$message.error("密码错误");
-        }
+        inputRequired: true,
+        inputType: "password",
+        closeOnClickModal: false,
+        inputPattern: /\S/,
+        inputErrorMessage: "密码不能为空",
       });
+
+      const isOk = value === this.ADMIN_PASSWORD;
+      if (isOk) {
+        this.gameSettingDialog = true;
+      } else {
+        this.$message.error("密码错误");
+      }
     },
 
     getRoleDesc(roleName) {
