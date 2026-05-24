@@ -45,7 +45,7 @@
         <el-button type="warning" @click="joinGame" style="margin-left: 10px">
           加入对局
         </el-button>
-        <el-button type="info" @click="askGameSetting"> 对局设置 </el-button>
+        <el-button type="info" @click="askGameSetting"> 身份管理 </el-button>
       </div>
     </div>
 
@@ -202,14 +202,15 @@
     </div>
 
     <el-dialog
-      title="身份配置"
-      :visible.sync="gameSettingDialog"
+      title="身份管理"
+      :visible.sync="roleSettingVisible"
       :fullscreen="true"
+      class="role-set-dialog"
     >
       <GameSetting ref="setting" :initial-roles="roleConfigList" />
       <span slot="footer" class="dialog-footer">
-        <el-button @click="gameSettingDialog = false">取 消</el-button>
-        <el-button type="primary" @click="saveGameSetting"> 确 定 </el-button>
+        <el-button @click="roleSettingVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveGameSetting"> 保 存 </el-button>
       </span>
     </el-dialog>
   </div>
@@ -245,7 +246,7 @@ export default {
       judgeMsg: "",
       BIN_ID: "6a0f0ecb6610dd3ae88104e3",
       API_KEY: "$2a$10$Z9GMvjcEgBICbobvUeAOp.m7Wg/8FiUiblHXiv7XfVrpxAMEwOz3W",
-      gameSettingDialog: false,
+      roleSettingVisible: false,
 
       // 身份独立配置BIN 👇 把这里换成你新建的那个身份BIN ID
       settingBinId: "6a12952e6610dd3ae897b04a",
@@ -287,7 +288,7 @@ export default {
       });
       this.roleConfigList = final;
       this.rebuildCreateForm();
-      this.gameSettingDialog = false;
+      this.roleSettingVisible = false;
       this.$message.success("配置已保存");
     },
 
@@ -324,9 +325,9 @@ export default {
       }
     },
     async askGameSetting() {
-      const pass = await this.checkAdminPassword();
-      if (!pass) return;
-      this.gameSettingDialog = true;
+      // const pass = await this.checkAdminPassword();
+      // if (!pass) return;
+      this.roleSettingVisible = true;
     },
 
     getRoleDesc(roleName) {
@@ -568,6 +569,16 @@ export default {
 </script>
 
 <style scoped>
+::v-deep .role-set-dialog .el-dialog.is-fullscreen {
+  height: 100vh !important;
+  display: flex;
+  flex-direction: column;
+}
+::v-deep .role-set-dialog .el-dialog__body {
+  height: calc(100% -200px);
+  overflow-y: scroll;
+  padding: 0 20px;
+}
 .werewolf-game-container {
   max-width: 800px;
   margin: 0 auto;
