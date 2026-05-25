@@ -111,8 +111,9 @@
         v-if="isJudge"
         class="ml-2"
         :loading="endLoading"
-        >结束本局</el-button
       >
+        结束本局
+      </el-button>
 
       <div v-if="gameData.locked" class="mb-3 p-2 bg-warning rounded">
         ⚠️ 身份已锁定，不可抽牌
@@ -142,8 +143,9 @@
             type="success"
             class="mt-2"
             @click="drawRole"
-            >抽取身份牌</el-button
           >
+            抽取身份牌
+          </el-button>
         </el-collapse-item>
 
         <el-collapse-item name="2">
@@ -576,28 +578,39 @@ export default {
     },
 
     async endGame() {
-      this.endLoading = true;
-      this.gameData = {
-        judge: "",
-        judgePwd: "",
-        roles: {},
-        players: [],
-        msg: "",
-        locked: false,
-      };
-      await this.saveGame();
-      this.gameStatus = { exist: false, joined: false };
-      this.localPlayer = {
-        name: this.localPlayer.name,
-        role: "",
-        seq: 0,
-        dead: false,
-        note: this.localPlayer.note || "",
-      };
-      this.saveLocal();
-      this.endLoading = false;
-      this.$message.success("已成功结束本局");
-      this.refreshAll();
+      this.$confirm("结束本局后，其他所有成员也将自动退出, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+        center: true,
+        showClose: false,
+        closeOnClickModal: false,
+      })
+        .then(async () => {
+          this.endLoading = true;
+          this.gameData = {
+            judge: "",
+            judgePwd: "",
+            roles: {},
+            players: [],
+            msg: "",
+            locked: false,
+          };
+          await this.saveGame();
+          this.gameStatus = { exist: false, joined: false };
+          this.localPlayer = {
+            name: this.localPlayer.name,
+            role: "",
+            seq: 0,
+            dead: false,
+            note: this.localPlayer.note || "",
+          };
+          this.saveLocal();
+          this.endLoading = false;
+          this.$message.success("已成功结束本局");
+          this.refreshAll();
+        })
+        .catch(() => {});
     },
 
     refreshAll() {
