@@ -216,7 +216,43 @@
             placeholder="请输入"
           />
         </el-collapse-item>
+
+        <!-- ====================== 新增：投票信息面板 ====================== -->
         <el-collapse-item name="4">
+          <template slot="title">
+            投票信息<i class="el-icon-s-ticket" style="margin-left: 4px" />
+          </template>
+
+          <div v-if="!isJudge && localPlayer.role && localPlayer.seq">
+            <el-input
+              v-model.number="voteTarget"
+              type="number"
+              placeholder="输入你要投的玩家序号"
+              style="width: 200px; margin-bottom: 10px"
+            ></el-input>
+            <div style="display: flex; gap: 10px">
+              <el-button type="primary" @click="doVote">确认投票</el-button>
+              <el-button type="info" @click="doAbandon">弃票</el-button>
+            </div>
+            <div style="margin-top: 10px">
+              当前你的选择：{{ voteTarget ? voteTarget + "号" : "未投票" }}
+            </div>
+          </div>
+
+          <div v-else-if="isJudge" style="line-height: 1.8">
+            <div v-for="(voters, targetSeq) in voteStat" :key="targetSeq">
+              {{ targetSeq }}号：{{ voters.join("号、") }}号
+            </div>
+            <div style="margin-top: 8px; font-weight: bold">
+              弃票：{{ abandonList.join("号、") }}号
+            </div>
+          </div>
+
+          <div v-else>请先抽取身份后再投票</div>
+        </el-collapse-item>
+        <!-- =================================================================== -->
+
+        <el-collapse-item name="5">
           <template slot="title">
             上帝广播<i class="el-icon-message-solid" style="margin-left: 4px" />
           </template>
@@ -280,7 +316,7 @@ export default {
       ADMIN_PASSWORD: ADMIN_PASSWORD,
       tempName: "",
       localPlayer: {},
-      activeCollapse: ["1", "2", "3", "4"],
+      activeCollapse: ["1", "2", "3", "4", "5"],
       showCreatePanel: false,
       createLoading: false,
       endLoading: false,
@@ -304,6 +340,11 @@ export default {
       settingBinId: "6a12952e6610dd3ae897b04a",
       saveRoleLoading: false,
       quitGameLoading: false,
+
+      // === 投票新增变量 ===
+      voteTarget: null,
+      voteStat: {},
+      abandonList: [],
     };
   },
   mounted() {
@@ -466,6 +507,9 @@ export default {
       }
       this.isJudge = this.gameData.judge === this.localPlayer.name;
       this.refreshLoading = false;
+
+      // 新增：刷新投票统计
+      this.refreshVoteStat();
     },
     async saveGame() {
       await this.fetch("", {
@@ -532,6 +576,8 @@ export default {
         ],
         msg: "对局已创建",
         locked: false,
+        votes: {},
+        abandons: [],
       };
       await this.saveGame();
       this.createLoading = false;
@@ -652,6 +698,8 @@ export default {
             players: [],
             msg: "",
             locked: false,
+            votes: {},
+            abandons: [],
           };
           await this.saveGame();
           this.gameStatus = { exist: false, joined: false };
@@ -673,6 +721,70 @@ export default {
     refreshAll() {
       this.getGame();
     },
+
+    // ====================== 纯新增：投票功能（已修复0号BUG） ======================
+    refreshVoteStat() {
+      const votes = this.gameData.votes || {};
+      const abandons = this.gameData.abandons || [];
+      let stat = {};
+
+      for (let voterSeq in votes) {
+        // 过滤上帝0号，只统计有身份的玩家
+        if (voterSeq == 0) continue;
+
+        const target = votes[voterSeq];
+        if (!stat[target]) stat[target] = [];
+        stat[target].push(Number(voterSeq));
+      }
+
+      this.voteStat = stat;
+      // 过滤弃票里的0号
+      this.abandonList = abandons.filter((num) => num != 0).map(Number);
+    },
+
+    async doVote() {
+      if (!this.voteTarget) {
+        this.$message.warning("请输入投票序号");
+        return;
+      }
+      await this.getGame();
+      const seq = this.localPlayer.seq;
+      // 上帝不能投票
+      if (seq === 0) return;
+
+      this.gameData.votes = this.gameData.votes || {};
+      this.gameData.abandons = this.gameData.abandons || [];
+
+      this.gameData.votes[seq] = this.voteTarget;
+
+      const idx = this.gameData.abandons.indexOf(seq);
+      if (idx >= 0) this.gameData.abandons.splice(idx, 1);
+
+      await this.saveGame();
+      this.refreshVoteStat();
+      this.$message.success("投票成功：投给 " + this.voteTarget + " 号");
+    },
+
+    async doAbandon() {
+      await this.getGame();
+      const seq = this.localPlayer.seq;
+      if (seq === 0) return;
+
+      this.gameData.votes = this.gameData.votes || {};
+      this.gameData.abandons = this.gameData.abandons || [];
+
+      delete this.gameData.votes[seq];
+
+      if (!this.gameData.abandons.includes(seq)) {
+        this.gameData.abandons.push(seq);
+      }
+
+      this.voteTarget = null;
+      await this.saveGame();
+      this.refreshVoteStat();
+      this.$message.info("你已弃票");
+    },
+    // ==============================================================
   },
 };
 </script>
