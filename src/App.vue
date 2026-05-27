@@ -138,7 +138,9 @@
           </template>
           <div v-if="isJudge" class="font-bold">上帝</div>
           <div class="font-bold" v-else-if="localPlayer.role">
-            {{ localPlayer.seq }} - {{ localPlayer.role }}
+            {{ localPlayer.seq }} - {{ localPlayer.role }}({{
+              localPlayer.name
+            }})
             <div
               style="
                 font-size: 14px;
@@ -605,6 +607,8 @@ export default {
         }
       )
         .then(async () => {
+          const pass = await this.checkAdminPassword();
+          if (!pass) return;
           this.quitGameLoading = true;
           // 👇 关键修复：必须同时更新 gameData.players
           this.players = this.players.filter(
