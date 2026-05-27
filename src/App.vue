@@ -255,6 +255,16 @@
             >
               弃票：{{ abandonList.join("号、") }}号
             </div>
+            <!-- 上帝专用：一键填充投票结果到广播 -->
+            <el-button
+              type="success"
+              size="small"
+              icon="el-icon-copy-document"
+              @click="fillVoteToBroadcast"
+              style="margin-top: 10px"
+            >
+              一键填充投票结果到广播
+            </el-button>
           </div>
 
           <div v-else>请先抽取身份后再投票</div>
@@ -368,6 +378,26 @@ export default {
     this.getGame();
   },
   methods: {
+    // 上帝专用：一键把投票结果填充到广播框
+    fillVoteToBroadcast() {
+      let text = "今日投票结果：\n";
+
+      // 拼接投票统计
+      for (let target in this.voteStat) {
+        const voters = this.voteStat[target];
+        text += `${target}号(${voters.length}票)：${voters.join("号、")}号\n`;
+      }
+
+      // 拼接弃票
+      if (this.abandonList.length > 0) {
+        text += `弃票：${this.abandonList.join("号、")}号\n`;
+      }
+
+      // 填入广播输入框
+      this.judgeMsg = text.trim();
+      this.$message.success("已自动填充投票结果到广播输入框！");
+    },
+
     // 读取身份配置（独立BIN）
     async getRoleConfig() {
       try {
