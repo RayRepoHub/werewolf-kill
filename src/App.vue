@@ -300,7 +300,10 @@
               锁定身份（开局）
             </el-button> -->
           </div>
-          <div class="p-2 bg-light rounded">
+          <div
+            class="p-2 bg-light rounded"
+            style="white-space: pre-wrap; word-break: break-all"
+          >
             {{ gameData.msg || "暂无内容" }}
           </div>
         </el-collapse-item>
@@ -394,7 +397,7 @@ export default {
       }
 
       // 填入广播输入框
-      this.judgeMsg = text.trim();
+      this.judgeMsg = text;
       this.$message.success("已自动填充投票结果到广播输入框！");
     },
 
