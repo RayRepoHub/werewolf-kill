@@ -105,6 +105,18 @@
       <el-button type="info" @click="refreshAll" class="mb-3">
         刷新信息
       </el-button>
+
+      <!-- 👇 非上帝玩家显示退出按钮 -->
+      <el-button
+        type="warning"
+        @click="quitGame"
+        class="ml-2 mb-3"
+        v-if="!isJudge"
+        v-loading="quitGameLoading"
+      >
+        退出对局
+      </el-button>
+
       <el-button
         type="danger"
         @click="endGame"
@@ -289,6 +301,7 @@ export default {
       // 身份独立配置BIN 👇 把这里换成你新建的那个身份BIN ID
       settingBinId: "6a12952e6610dd3ae897b04a",
       saveRoleLoading: false,
+      quitGameLoading: false,
     };
   },
   mounted() {
@@ -576,6 +589,46 @@ export default {
       this.gameData.msg = this.judgeMsg;
       await this.saveGame();
     },
+
+    // ====================== 新增：退出对局函数 ======================
+    async quitGame() {
+      this.$confirm(
+        "确定退出本局吗？退出后将从成员列表删除，无法自动返回",
+        "提示",
+        {
+          confirmButtonText: "确定退出",
+          cancelButtonText: "取消",
+          type: "warning",
+          center: true,
+          showClose: false,
+          closeOnClickModal: false,
+        }
+      )
+        .then(async () => {
+          this.quitGameLoading = true;
+          // 👇 关键修复：必须同时更新 gameData.players
+          this.players = this.players.filter(
+            (p) => p.name !== this.localPlayer.name
+          );
+
+          // ✅ 必须把新数组赋值给 gameData，否则云端不更新！
+          this.gameData.players = this.players;
+
+          await this.saveGame(); // 保存到云端
+
+          // 清空本地身份
+          this.localPlayer.role = "";
+          this.localPlayer.seq = 0;
+          this.localPlayer.dead = false;
+          this.saveLocal();
+
+          this.gameStatus.joined = false;
+          this.quitGameLoading = false;
+          this.$message.success("已成功退出对局");
+        })
+        .catch(() => {});
+    },
+    // ==============================================================
 
     async endGame() {
       this.$confirm("结束本局后，其他所有成员也将自动退出, 是否继续?", "提示", {
