@@ -37,6 +37,7 @@
       :visible.sync="editDialog"
       :modal-append-to-body="false"
       :fullscreen="true"
+      append-to-body
     >
       <el-form label-width="80px">
         <el-form-item label="名称">
