@@ -112,7 +112,7 @@
         @click="quitGame"
         class="ml-2 mb-3"
         v-if="!isJudge"
-        v-loading="quitGameLoading"
+        :loading="quitGameLoading"
       >
         退出对局
       </el-button>
@@ -241,9 +241,18 @@
 
           <div v-else-if="isJudge" style="line-height: 1.8">
             <div v-for="(voters, targetSeq) in voteStat" :key="targetSeq">
-              {{ targetSeq }}号：{{ voters.join("号、") }}号
+              {{ targetSeq }}号({{ voters.length }}票)：{{
+                voters.join("号、")
+              }}号
             </div>
-            <div style="margin-top: 8px; font-weight: bold">
+            <div
+              style="margin-top: 8px; font-weight: bold"
+              v-if="
+                abandonList &&
+                abandonList instanceof Array &&
+                abandonList.length > 0
+              "
+            >
               弃票：{{ abandonList.join("号、") }}号
             </div>
           </div>
@@ -264,7 +273,12 @@
               placeholder="请输入"
               style="margin-bottom: 20px"
             />
-            <el-button type="primary" class="mt-2" @click="sendMsg">
+            <el-button
+              type="primary"
+              class="mt-2"
+              @click="sendMsg"
+              :loading="sendMsgLoading"
+            >
               发布
             </el-button>
             <!-- <el-button
@@ -340,6 +354,7 @@ export default {
       settingBinId: "6a12952e6610dd3ae897b04a",
       saveRoleLoading: false,
       quitGameLoading: false,
+      sendMsgLoading: false,
 
       // === 投票新增变量 ===
       voteTarget: null,
@@ -634,8 +649,11 @@ export default {
     },
 
     async sendMsg() {
+      this.sendMsgLoading = true;
       this.gameData.msg = this.judgeMsg;
       await this.saveGame();
+      this.$message.success("发布成功");
+      this.sendMsgLoading = false;
     },
 
     // ====================== 新增：退出对局函数 ======================
