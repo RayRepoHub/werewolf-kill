@@ -205,6 +205,34 @@
             </el-button>
           </div>
         </el-collapse-item>
+        <el-collapse-item title="进程计时" name="processTimer">
+          <div style="padding: 15px; text-align: center">
+            <div
+              style="font-size: 32px; font-weight: bold; margin-bottom: 16px"
+            >
+              {{ timeStr }}
+            </div>
+            <div style="display: flex; justify-content: center; gap: 10px">
+              <el-button
+                size="mini"
+                type="success"
+                @click="start"
+                :disabled="running"
+              >
+                计时
+              </el-button>
+              <el-button
+                size="mini"
+                type="warning"
+                @click="stop"
+                :disabled="!running"
+              >
+                暂停
+              </el-button>
+              <el-button size="mini" type="info" @click="reset">重置</el-button>
+            </div>
+          </div>
+        </el-collapse-item>
         <el-collapse-item name="gameNotes">
           <template slot="title">
             游戏笔记<i class="el-icon-info" style="margin-left: 4px" />
@@ -349,6 +377,7 @@ export default {
         "gameNotes",
         "voteInfo",
         "godBroadcast",
+        "processTimer",
       ],
       showCreatePanel: false,
       createLoading: false,
@@ -379,14 +408,50 @@ export default {
       voteTarget: null,
       voteStat: {},
       abandonList: [],
+      running: false,
+      startTime: 0,
+      elapsed: 0,
+      timer: null,
     };
+  },
+  computed: {
+    timeStr() {
+      let ms = this.elapsed;
+      const minutes = Math.floor(ms / 6000)
+        .toString()
+        .padStart(2, "0");
+      const seconds = Math.floor((ms % 6000) / 100)
+        .toString()
+        .padStart(2, "0");
+      const centiseconds = (ms % 100).toString().padStart(2, "0");
+      return `${minutes}:${seconds}.${centiseconds}`;
+    },
   },
   mounted() {
     this.loadLocal();
     this.getRoleConfig();
     this.getGame();
   },
+  beforeDestroy() {
+    clearInterval(this.timer);
+  },
   methods: {
+    start() {
+      if (this.running) return;
+      this.running = true;
+      this.startTime = Date.now() - this.elapsed * 10;
+      this.timer = setInterval(() => {
+        this.elapsed = Math.floor((Date.now() - this.startTime) / 10);
+      }, 10);
+    },
+    stop() {
+      this.running = false;
+      clearInterval(this.timer);
+    },
+    reset() {
+      this.stop();
+      this.elapsed = 0;
+    },
     // 上帝专用：一键把投票结果填充到广播框
     fillVoteToBroadcast() {
       let text = "今日投票结果：\n";
