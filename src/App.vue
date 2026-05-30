@@ -207,11 +207,7 @@
         </el-collapse-item>
         <el-collapse-item title="进程计时" name="processTimer">
           <div style="padding: 15px; text-align: center">
-            <div
-              style="font-size: 32px; font-weight: bold; margin-bottom: 16px"
-            >
-              {{ timeStr }}
-            </div>
+            <div class="timer-box">{{ timeStr }}</div>
             <div style="display: flex; justify-content: center; gap: 10px">
               <el-button
                 size="mini"
@@ -442,7 +438,7 @@ export default {
       this.startTime = Date.now() - this.elapsed * 10;
       this.timer = setInterval(() => {
         this.elapsed = Math.floor((Date.now() - this.startTime) / 10);
-      }, 10);
+      }, 50); // 10 → 50
     },
     stop() {
       this.running = false;
@@ -912,6 +908,15 @@ export default {
 </script>
 
 <style scoped>
+.timer-box {
+  font-family: "Courier New", monospace;
+  font-size: 32px;
+  font-weight: bold;
+  width: 180px;
+  margin: 0 auto 16px;
+  letter-spacing: 1px;
+  text-align: center;
+}
 ::v-deep .role-set-dialog .el-dialog.is-fullscreen {
   height: 100vh !important;
   display: flex;
