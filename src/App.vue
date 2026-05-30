@@ -132,7 +132,7 @@
       </div>
 
       <el-collapse v-model="activeCollapse" style="margin-top: 20px">
-        <el-collapse-item name="1">
+        <el-collapse-item name="roleCard">
           <template slot="title">
             我的身份<i class="el-icon-s-custom" style="margin-left: 4px" />
           </template>
@@ -162,9 +162,9 @@
           </el-button>
         </el-collapse-item>
 
-        <el-collapse-item name="2">
+        <el-collapse-item name="playerList">
           <template slot="title">
-            成员列表<i class="el-icon-s-order" style="margin-left: 4px" />
+            玩家列表<i class="el-icon-s-order" style="margin-left: 4px" />
           </template>
           <div
             v-for="p in players"
@@ -205,7 +205,7 @@
             </el-button>
           </div>
         </el-collapse-item>
-        <el-collapse-item name="3">
+        <el-collapse-item name="gameNotes">
           <template slot="title">
             游戏笔记<i class="el-icon-info" style="margin-left: 4px" />
           </template>
@@ -218,7 +218,7 @@
         </el-collapse-item>
 
         <!-- ====================== 新增：投票信息面板 ====================== -->
-        <el-collapse-item name="4">
+        <el-collapse-item name="voteInfo">
           <template slot="title">
             投票信息<i class="el-icon-s-ticket" style="margin-left: 4px" />
           </template>
@@ -271,7 +271,7 @@
         </el-collapse-item>
         <!-- =================================================================== -->
 
-        <el-collapse-item name="5">
+        <el-collapse-item name="godBroadcast">
           <template slot="title">
             上帝广播<i class="el-icon-message-solid" style="margin-left: 4px" />
           </template>
@@ -343,7 +343,13 @@ export default {
       ADMIN_PASSWORD: ADMIN_PASSWORD,
       tempName: "",
       localPlayer: {},
-      activeCollapse: ["1", "2", "3", "4", "5"],
+      activeCollapse: [
+        "roleCard",
+        "playerList",
+        "gameNotes",
+        "voteInfo",
+        "godBroadcast",
+      ],
       showCreatePanel: false,
       createLoading: false,
       endLoading: false,
