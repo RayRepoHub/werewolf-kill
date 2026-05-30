@@ -205,7 +205,10 @@
             </el-button>
           </div>
         </el-collapse-item>
-        <el-collapse-item title="进程计时" name="processTimer">
+        <el-collapse-item name="processTimer">
+          <template slot="title">
+            进程计时<i class="el-icon-s-opportunity" style="margin-left: 4px" />
+          </template>
           <div style="padding: 15px; text-align: center">
             <div class="timer-box">{{ timeStr }}</div>
             <div style="display: flex; justify-content: center; gap: 10px">
@@ -382,7 +385,6 @@ export default {
         "gameNotes",
         "voteInfo",
         "godBroadcast",
-        "processTimer",
       ],
       showCreatePanel: false,
       createLoading: false,
