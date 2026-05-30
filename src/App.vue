@@ -239,6 +239,15 @@
             rows="6"
             placeholder="请输入"
           />
+          <el-button
+            type="primary"
+            size="mini"
+            icon="el-icon-document"
+            @click="saveNote"
+            style="margin-top: 8px"
+          >
+            保存笔记
+          </el-button>
         </el-collapse-item>
 
         <!-- ====================== 新增：投票信息面板 ====================== -->
@@ -432,6 +441,11 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    // 保存笔记
+    saveNote() {
+      this.saveLocal();
+      this.$message.success("笔记已保存");
+    },
     start() {
       if (this.running) return;
       this.running = true;
@@ -578,7 +592,7 @@ export default {
       const p = localStorage.getItem("werewolf_player");
       this.localPlayer = p
         ? JSON.parse(p)
-        : { name: "", role: "", seq: 0, dead: false };
+        : { name: "", role: "", seq: 0, dead: false, note: "" };
     },
     saveLocal() {
       localStorage.setItem("werewolf_player", JSON.stringify(this.localPlayer));
@@ -606,7 +620,7 @@ export default {
           role: "",
           seq: 0,
           dead: false,
-          note: this.localPlayer.note || "",
+          note: "", // 对局结束自动清空笔记
         };
         this.saveLocal();
         this.$message.info("上帝已结束对局");
@@ -784,10 +798,11 @@ export default {
 
           await this.saveGame(); // 保存到云端
 
-          // 清空本地身份
+          // 清空本地身份 + 笔记
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
+          this.localPlayer.note = "";
           this.saveLocal();
 
           this.gameStatus.joined = false;
@@ -826,7 +841,7 @@ export default {
             role: "",
             seq: 0,
             dead: false,
-            note: this.localPlayer.note || "",
+            note: "", // 结束游戏清空笔记
           };
           this.saveLocal();
           this.endLoading = false;
