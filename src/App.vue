@@ -242,13 +242,15 @@
             rows="6"
             placeholder="请输入"
           />
-          <div class="w-full flex-end">
+          <div class="w-full flex-end" style="margin-top: 8px; gap: 8px">
+            <el-button size="mini" icon="el-icon-delete" @click="clearNote">
+              清空笔记
+            </el-button>
             <el-button
               type="primary"
               size="mini"
               icon="el-icon-document"
               @click="saveNote"
-              style="margin-top: 8px"
             >
               保存笔记
             </el-button>
@@ -452,6 +454,12 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    // 清空笔记
+    clearNote() {
+      this.localPlayer.note = "";
+      this.saveLocal();
+      this.$message.info("笔记已清空");
+    },
     // 保存笔记
     saveNote() {
       this.saveLocal();
