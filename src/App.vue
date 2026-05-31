@@ -242,15 +242,17 @@
             rows="6"
             placeholder="请输入"
           />
-          <el-button
-            type="primary"
-            size="mini"
-            icon="el-icon-document"
-            @click="saveNote"
-            style="margin-top: 8px"
-          >
-            保存笔记
-          </el-button>
+          <div class="w-full flex-end">
+            <el-button
+              type="primary"
+              size="mini"
+              icon="el-icon-document"
+              @click="saveNote"
+              style="margin-top: 8px"
+            >
+              保存笔记
+            </el-button>
+          </div>
         </el-collapse-item>
 
         <!-- ====================== 新增：投票信息面板 ====================== -->
@@ -264,14 +266,18 @@
               v-model.number="voteTarget"
               type="number"
               placeholder="输入你要投的玩家序号"
-              style="width: 200px; margin-bottom: 10px"
+              style="width: 200px; margin-bottom: 8px"
             ></el-input>
             <div style="display: flex; gap: 10px">
-              <el-button type="primary" @click="doVote">确认投票</el-button>
-              <el-button type="info" @click="doAbandon">弃票</el-button>
+              <el-button size="mini" type="info" @click="doAbandon">
+                弃票
+              </el-button>
+              <el-button size="mini" type="primary" @click="doVote">
+                确认投票
+              </el-button>
             </div>
             <div style="margin-top: 10px">
-              当前你的选择：{{ voteTarget ? voteTarget + "号" : "未投票" }}
+              当前你的选择：{{ voteTarget ? voteTarget + "号" : "弃票" }}
             </div>
           </div>
 
@@ -294,10 +300,10 @@
             <!-- 上帝专用：一键填充投票结果到广播 -->
             <el-button
               type="success"
-              size="small"
+              size="mini"
               icon="el-icon-copy-document"
               @click="fillVoteToBroadcast"
-              style="margin-top: 10px"
+              style="margin-top: 8px"
             >
               一键填充投票结果到广播
             </el-button>
@@ -315,18 +321,21 @@
             <el-input
               v-model="judgeMsg"
               type="textarea"
-              rows="2"
+              rows="6"
               placeholder="请输入"
-              style="margin-bottom: 20px"
             />
-            <el-button
-              type="primary"
-              class="mt-2"
-              @click="sendMsg"
-              :loading="sendMsgLoading"
-            >
-              发布
-            </el-button>
+            <div class="w-full flex-end">
+              <el-button
+                type="primary"
+                size="mini"
+                class="mt-2"
+                @click="sendMsg"
+                :loading="sendMsgLoading"
+                style="margin-top: 8px"
+              >
+                发布
+              </el-button>
+            </div>
             <!-- <el-button
               v-if="isJudge && !gameData.locked"
               type="warning"
@@ -775,7 +784,7 @@ export default {
     // ====================== 新增：退出对局函数 ======================
     async quitGame() {
       this.$confirm(
-        "确定退出本局吗？退出后将从成员列表删除，无法自动返回",
+        "退出对局后会失去身份牌且移出玩家列表，该操作可能会对本局游戏造成影响，需要更高权限确认",
         "提示",
         {
           confirmButtonText: "确定退出",
@@ -975,6 +984,6 @@ export default {
 }
 .rounded {
   border-radius: 4px;
-  padding: 8px 12px;
+  /* padding: 8px 12px; */
 }
 </style>
