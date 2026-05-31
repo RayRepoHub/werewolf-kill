@@ -262,27 +262,7 @@
           <template slot="title">
             投票信息<i class="el-icon-s-ticket" style="margin-left: 4px" />
           </template>
-
-          <div v-if="!isJudge && localPlayer.role && localPlayer.seq">
-            <el-input
-              v-model.number="voteTarget"
-              type="number"
-              placeholder="输入你要投的玩家序号"
-              style="width: 200px; margin-bottom: 8px"
-            ></el-input>
-            <div style="display: flex; gap: 10px">
-              <el-button size="mini" type="info" @click="doAbandon">
-                弃票
-              </el-button>
-              <el-button size="mini" type="primary" @click="doVote">
-                确认投票
-              </el-button>
-            </div>
-            <div style="margin-top: 10px">
-              当前你的选择：{{ voteTarget ? voteTarget + "号" : "弃票" }}
-            </div>
-          </div>
-
+          <div v-if="localPlayer.dead">你已经死亡，无法参与投票</div>
           <div v-else-if="isJudge" style="line-height: 1.8">
             <div v-for="(voters, targetSeq) in voteStat" :key="targetSeq">
               {{ targetSeq }}号({{ voters.length }}票)：{{
@@ -310,7 +290,25 @@
               一键填充投票结果到广播
             </el-button>
           </div>
-
+          <div v-else-if="localPlayer.role && localPlayer.seq">
+            <el-input
+              v-model.number="voteTarget"
+              type="number"
+              placeholder="输入你要投的玩家序号"
+              style="width: 200px; margin-bottom: 8px"
+            ></el-input>
+            <div style="display: flex; gap: 10px">
+              <el-button size="mini" type="info" @click="doAbandon">
+                弃票
+              </el-button>
+              <el-button size="mini" type="primary" @click="doVote">
+                确认投票
+              </el-button>
+            </div>
+            <div style="margin-top: 10px">
+              当前你的选择：{{ voteTarget ? voteTarget + "号" : "弃票" }}
+            </div>
+          </div>
           <div v-else>请先抽取身份后再投票</div>
         </el-collapse-item>
         <!-- =================================================================== -->
