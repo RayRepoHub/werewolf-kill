@@ -621,6 +621,28 @@ export default {
       this.gameData = res.record || {};
       this.players = this.gameData.players || [];
 
+      // ====================== 【优化：固定玩家排序】 ======================
+      this.players.sort((a, b) => {
+        // 1. 上帝永远排第一
+        if (a.role === "上帝") return -1;
+        if (b.role === "上帝") return 1;
+
+        // 2. 有序号的玩家按数字升序（1,2,3,4...）
+        const aHasSeq = a.seq && a.seq > 0;
+        const bHasSeq = b.seq && b.seq > 0;
+
+        // 都有序号 → 比大小
+        if (aHasSeq && bHasSeq) return a.seq - b.seq;
+        // 只有A有序号 → A靠前
+        if (aHasSeq) return -1;
+        // 只有B有序号 → B靠前
+        if (bHasSeq) return 1;
+
+        // 3. 都没序号 → 都是旁观者，保持原有顺序
+        return 0;
+      });
+      // ====================================================================
+
       const beforeJoined = this.gameStatus.joined;
       this.gameStatus.exist = !!this.gameData.judge;
 
@@ -631,7 +653,7 @@ export default {
           role: "",
           seq: 0,
           dead: false,
-          note: "", // 对局结束自动清空笔记
+          note: "",
         };
         this.saveLocal();
         this.$message.info("上帝已结束对局");
