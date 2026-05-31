@@ -205,6 +205,30 @@
             </el-button>
           </div>
         </el-collapse-item>
+        <el-collapse-item name="gameNotes">
+          <template slot="title">
+            游戏笔记<i class="el-icon-info" style="margin-left: 4px" />
+          </template>
+          <el-input
+            v-model="localPlayer.note"
+            type="textarea"
+            rows="6"
+            placeholder="请输入"
+          />
+          <div class="w-full flex-end" style="margin-top: 8px; gap: 8px">
+            <el-button size="mini" icon="el-icon-delete" @click="clearNote">
+              清空笔记
+            </el-button>
+            <el-button
+              type="primary"
+              size="mini"
+              icon="el-icon-document"
+              @click="saveNote"
+            >
+              保存笔记
+            </el-button>
+          </div>
+        </el-collapse-item>
         <el-collapse-item name="processTimer">
           <template slot="title">
             进程计时<i class="el-icon-s-opportunity" style="margin-left: 4px" />
@@ -232,31 +256,6 @@
             </div>
           </div>
         </el-collapse-item>
-        <el-collapse-item name="gameNotes">
-          <template slot="title">
-            游戏笔记<i class="el-icon-info" style="margin-left: 4px" />
-          </template>
-          <el-input
-            v-model="localPlayer.note"
-            type="textarea"
-            rows="6"
-            placeholder="请输入"
-          />
-          <div class="w-full flex-end" style="margin-top: 8px; gap: 8px">
-            <el-button size="mini" icon="el-icon-delete" @click="clearNote">
-              清空笔记
-            </el-button>
-            <el-button
-              type="primary"
-              size="mini"
-              icon="el-icon-document"
-              @click="saveNote"
-            >
-              保存笔记
-            </el-button>
-          </div>
-        </el-collapse-item>
-
         <!-- ====================== 新增：投票信息面板 ====================== -->
         <el-collapse-item name="voteInfo">
           <template slot="title">
@@ -388,13 +387,7 @@ export default {
       ADMIN_PASSWORD: ADMIN_PASSWORD,
       tempName: "",
       localPlayer: {},
-      activeCollapse: [
-        "roleCard",
-        "playerList",
-        "gameNotes",
-        "voteInfo",
-        "godBroadcast",
-      ],
+      activeCollapse: ["roleCard", "playerList", "gameNotes"],
       showCreatePanel: false,
       createLoading: false,
       endLoading: false,
