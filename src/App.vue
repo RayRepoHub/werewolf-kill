@@ -173,6 +173,24 @@
           >
             <span :class="{ dead: p.dead }">
               <template v-if="p.seq && p.role">
+                <!-- 👇 本地私人备注（本局身份 + 存疑）👇 -->
+                <el-select
+                  v-if="!isJudge"
+                  v-model="localMarks[p.uuid]"
+                  size="mini"
+                  placeholder="备注"
+                  :class="{ 'opacity-0': p.uuid === localPlayer.uuid }"
+                  style="width: 110px; margin: 4px 8px 4px 0"
+                  @change="saveLocalMarks"
+                >
+                  <el-option label="存疑" value="存疑"></el-option>
+                  <el-option
+                    v-for="roleName in Object.keys(gameRoles)"
+                    :key="roleName"
+                    :label="roleName"
+                    :value="roleName"
+                  ></el-option>
+                </el-select>
                 {{ p.seq }} - {{ p.name }}
                 <span v-if="p.dead" style="color: red; margin: 0 5px">
                   [死亡]
@@ -421,6 +439,8 @@ export default {
       startTime: 0,
       elapsed: 0,
       timer: null,
+      localMarks: {}, // 本地备注（永久保存）
+      gameRoles: {}, // 本局游戏启用的身份
     };
   },
   computed: {
@@ -440,11 +460,22 @@ export default {
     this.loadLocal();
     this.getRoleConfig();
     this.getGame();
+    this.loadLocalMarks();
   },
   beforeDestroy() {
     clearInterval(this.timer);
   },
   methods: {
+    // 加载本地备注
+    loadLocalMarks() {
+      const data = localStorage.getItem("localMarks");
+      if (data) this.localMarks = JSON.parse(data);
+    },
+
+    // 保存本地备注
+    saveLocalMarks() {
+      localStorage.setItem("localMarks", JSON.stringify(this.localMarks));
+    },
     // 标准加密级 UUID
     generateUUID() {
       return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
@@ -632,6 +663,7 @@ export default {
       try {
         const res = await this.fetch();
         this.gameData = res.record || {};
+        this.gameRoles = this.gameData.roles || {};
         this.players = this.gameData.players || [];
 
         // 排序：上帝 → 序号 → 旁观者
@@ -863,6 +895,8 @@ export default {
           this.gameStatus.joined = false;
           this.quitGameLoading = false;
           this.$message.success("已成功退出对局");
+          this.localMarks = {};
+          localStorage.removeItem("localMarks");
         })
         .catch(() => {});
     },
