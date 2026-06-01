@@ -445,6 +445,15 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    // 生成唯一UUID
+    generateUUID() {
+      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    },
+
     // 清空笔记
     clearNote() {
       this.localPlayer.note = "";
@@ -600,9 +609,22 @@ export default {
     },
     loadLocal() {
       const p = localStorage.getItem("werewolf_player");
-      this.localPlayer = p
-        ? JSON.parse(p)
-        : { name: "", role: "", seq: 0, dead: false, note: "" };
+      if (p) {
+        this.localPlayer = JSON.parse(p);
+        if (!this.localPlayer.uuid) {
+          this.localPlayer.uuid = this.generateUUID();
+        }
+      } else {
+        this.localPlayer = {
+          uuid: this.generateUUID(),
+          name: "",
+          role: "",
+          seq: 0,
+          dead: false,
+          note: "",
+        };
+      }
+      this.saveLocal();
     },
     saveLocal() {
       localStorage.setItem("werewolf_player", JSON.stringify(this.localPlayer));
@@ -648,7 +670,7 @@ export default {
       if (beforeJoined && !this.gameStatus.exist) {
         this.gameStatus.joined = false;
         this.localPlayer = {
-          name: this.localPlayer.name,
+          ...this.localPlayer,
           role: "",
           seq: 0,
           dead: false,
@@ -658,7 +680,8 @@ export default {
         this.$message.info("上帝已结束对局");
       }
 
-      const me = this.players.find((i) => i.name === this.localPlayer.name);
+      // 用 UUID 查找自己
+      const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
       if (me) {
         this.gameStatus.joined = true;
         this.localPlayer = { ...this.localPlayer, ...me };
@@ -684,11 +707,25 @@ export default {
         this.$message.warning("当前暂无对局，请先创建对局");
         return;
       }
-      if (this.players.some((i) => i.name === this.localPlayer.name)) {
+
+      // 1. 重名判断（新增）
+      const nameExists = this.players.some(
+        (i) => i.name === this.localPlayer.name
+      );
+      if (nameExists) {
+        this.$message.error("该名字已被使用，请更换名字后加入！");
+        return;
+      }
+
+      // 2. UUID 判断是否已在房间
+      const hasMe = this.players.some((i) => i.uuid === this.localPlayer.uuid);
+      if (hasMe) {
         this.gameStatus.joined = true;
         return;
       }
+
       this.players.push({
+        uuid: this.localPlayer.uuid,
         name: this.localPlayer.name,
         role: "",
         seq: 0,
@@ -733,7 +770,13 @@ export default {
         judgePwd: pwd,
         roles: gameRoles,
         players: [
-          { name: this.localPlayer.name, role: "上帝", seq: 0, dead: false },
+          {
+            uuid: this.localPlayer.uuid,
+            name: this.localPlayer.name,
+            role: "上帝",
+            seq: 0,
+            dead: false,
+          },
         ],
         msg: "对局已创建",
         locked: false,
@@ -768,7 +811,7 @@ export default {
         this.$message.error("发完了");
         return;
       }
-      const me = this.players.find((p) => p.name === this.localPlayer.name);
+      const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
       const usedSeqs = this.players.map((p) => p.seq).filter(Boolean);
       let seq = 1;
       while (usedSeqs.includes(seq)) seq++;
@@ -820,17 +863,15 @@ export default {
           const pass = await this.checkAdminPassword();
           if (!pass) return;
           this.quitGameLoading = true;
-          // 👇 关键修复：必须同时更新 gameData.players
-          this.players = this.players.filter(
-            (p) => p.name !== this.localPlayer.name
-          );
 
-          // ✅ 必须把新数组赋值给 gameData，否则云端不更新！
+          // 按 UUID 移除自己
+          this.players = this.players.filter(
+            (p) => p.uuid !== this.localPlayer.uuid
+          );
           this.gameData.players = this.players;
 
-          await this.saveGame(); // 保存到云端
+          await this.saveGame();
 
-          // 清空本地身份 + 笔记
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
@@ -869,11 +910,11 @@ export default {
           await this.saveGame();
           this.gameStatus = { exist: false, joined: false };
           this.localPlayer = {
-            name: this.localPlayer.name,
+            ...this.localPlayer,
             role: "",
             seq: 0,
             dead: false,
-            note: "", // 结束游戏清空笔记
+            note: "",
           };
           this.saveLocal();
           this.endLoading = false;
@@ -970,7 +1011,7 @@ export default {
   flex-direction: column;
 }
 ::v-deep .role-set-dialog .el-dialog__body {
-  height: calc(100% -200px);
+  height: calc(100% - 200px);
   overflow-y: scroll;
   padding: 0 20px;
 }
