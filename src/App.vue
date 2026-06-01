@@ -445,13 +445,14 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
-    // 生成唯一UUID
+    // 标准加密级 UUID
     generateUUID() {
-      return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-        const r = (Math.random() * 16) | 0;
-        const v = c === "x" ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-      });
+      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
+        (
+          c ^
+          ((crypto.getRandomValues(new Uint8Array(1))[0] & 15) >> (c / 4))
+        ).toString(16)
+      );
     },
 
     // 清空笔记
@@ -471,7 +472,7 @@ export default {
       this.startTime = Date.now() - this.elapsed * 10;
       this.timer = setInterval(() => {
         this.elapsed = Math.floor((Date.now() - this.startTime) / 10);
-      }, 50); // 10 → 50
+      }, 50);
     },
     stop() {
       this.running = false;
@@ -484,19 +485,13 @@ export default {
     // 上帝专用：一键把投票结果填充到广播框
     fillVoteToBroadcast() {
       let text = "今日投票结果：\n";
-
-      // 拼接投票统计
       for (let target in this.voteStat) {
         const voters = this.voteStat[target];
         text += `${target}号(${voters.length}票)：${voters.join("号、")}号\n`;
       }
-
-      // 拼接弃票
       if (this.abandonList.length > 0) {
         text += `弃票：${this.abandonList.join("号、")}号\n`;
       }
-
-      // 填入广播输入框
       this.judgeMsg = text;
       this.$message.success("已自动填充投票结果到广播输入框！");
     },
@@ -518,26 +513,30 @@ export default {
       }
     },
 
-    // 保存身份配置（点确定才保存）
+    // 保存身份配置
     async saveGameSetting() {
       this.saveRoleLoading = true;
       const final = this.$refs.setting.getFinalList();
-      await fetch(`https://api.jsonbin.io/v3/b/${this.settingBinId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Master-Key": this.API_KEY,
-        },
-        body: JSON.stringify(final),
-      });
-      this.roleConfigList = final;
-      this.rebuildCreateForm();
+      try {
+        await fetch(`https://api.jsonbin.io/v3/b/${this.settingBinId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Master-Key": this.API_KEY,
+          },
+          body: JSON.stringify(final),
+        });
+        this.roleConfigList = final;
+        this.rebuildCreateForm();
+        this.$message.success("配置已保存");
+      } catch (err) {
+        this.$message.error("保存失败");
+      }
       this.saveRoleLoading = false;
       this.roleSettingVisible = false;
-      this.$message.success("配置已保存");
     },
 
-    // 重建创建对局表单（永远最新）
+    // 重建创建对局表单
     rebuildCreateForm() {
       const roles = {};
       this.roleConfigList.forEach((r) => {
@@ -556,22 +555,14 @@ export default {
           inputPattern: /\S/,
           inputErrorMessage: "密码不能为空",
         });
-
-        const isOk = value === this.ADMIN_PASSWORD;
-        if (isOk) {
-          return true;
-        } else {
-          this.$message.error("密码错误");
-          return false;
-        }
+        return value === this.ADMIN_PASSWORD;
       } catch {
-        // 取消输入直接终止
         return false;
       }
     },
     async askGameSetting() {
-      // const pass = await this.checkAdminPassword();
-      // if (!pass) return;
+      const pass = await this.checkAdminPassword();
+      if (!pass) return;
       this.roleSettingVisible = true;
     },
 
@@ -603,7 +594,7 @@ export default {
         });
         return await res.json();
       } catch (e) {
-        console.log("请求异常");
+        console.error("请求异常", e);
         return { record: this.gameData || {} };
       }
     },
@@ -638,62 +629,53 @@ export default {
     },
     async getGame() {
       this.refreshLoading = true;
-      const res = await this.fetch();
-      this.gameData = res.record || {};
-      this.players = this.gameData.players || [];
+      try {
+        const res = await this.fetch();
+        this.gameData = res.record || {};
+        this.players = this.gameData.players || [];
 
-      // ====================== 【优化：固定玩家排序】 ======================
-      this.players.sort((a, b) => {
-        // 1. 上帝永远排第一
-        if (a.role === "上帝") return -1;
-        if (b.role === "上帝") return 1;
+        // 排序：上帝 → 序号 → 旁观者
+        this.players.sort((a, b) => {
+          if (a.role === "上帝") return -1;
+          if (b.role === "上帝") return 1;
+          const aHasSeq = a.seq > 0;
+          const bHasSeq = b.seq > 0;
+          if (aHasSeq && bHasSeq) return a.seq - b.seq;
+          if (aHasSeq) return -1;
+          if (bHasSeq) return 1;
+          return 0;
+        });
 
-        // 2. 有序号的玩家按数字升序（1,2,3,4...）
-        const aHasSeq = a.seq && a.seq > 0;
-        const bHasSeq = b.seq && b.seq > 0;
+        const beforeJoined = this.gameStatus.joined;
+        this.gameStatus.exist = !!this.gameData.judge;
 
-        // 都有序号 → 比大小
-        if (aHasSeq && bHasSeq) return a.seq - b.seq;
-        // 只有A有序号 → A靠前
-        if (aHasSeq) return -1;
-        // 只有B有序号 → B靠前
-        if (bHasSeq) return 1;
+        if (beforeJoined && !this.gameStatus.exist) {
+          this.gameStatus.joined = false;
+          this.localPlayer = {
+            ...this.localPlayer,
+            role: "",
+            seq: 0,
+            dead: false,
+            note: "",
+          };
+          this.saveLocal();
+          this.$message.info("上帝已结束对局");
+        }
 
-        // 3. 都没序号 → 都是旁观者，保持原有顺序
-        return 0;
-      });
-      // ====================================================================
-
-      const beforeJoined = this.gameStatus.joined;
-      this.gameStatus.exist = !!this.gameData.judge;
-
-      if (beforeJoined && !this.gameStatus.exist) {
-        this.gameStatus.joined = false;
-        this.localPlayer = {
-          ...this.localPlayer,
-          role: "",
-          seq: 0,
-          dead: false,
-          note: "",
-        };
-        this.saveLocal();
-        this.$message.info("上帝已结束对局");
+        const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
+        if (me) {
+          this.gameStatus.joined = true;
+          this.localPlayer = { ...this.localPlayer, ...me };
+          this.saveLocal();
+        } else {
+          this.gameStatus.joined = false;
+        }
+        this.isJudge = this.gameData.judge === this.localPlayer.name;
+        this.refreshVoteStat();
+      } catch (err) {
+        this.$message.error("刷新失败");
       }
-
-      // 用 UUID 查找自己
-      const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
-      if (me) {
-        this.gameStatus.joined = true;
-        this.localPlayer = { ...this.localPlayer, ...me };
-        this.saveLocal();
-      } else {
-        this.gameStatus.joined = false;
-      }
-      this.isJudge = this.gameData.judge === this.localPlayer.name;
       this.refreshLoading = false;
-
-      // 新增：刷新投票统计
-      this.refreshVoteStat();
     },
     async saveGame() {
       await this.fetch("", {
@@ -708,16 +690,16 @@ export default {
         return;
       }
 
-      // 1. 重名判断（新增）
+      // 重名判断
       const nameExists = this.players.some(
         (i) => i.name === this.localPlayer.name
       );
       if (nameExists) {
-        this.$message.error("该名字已被使用，请更换名字后加入！");
+        this.$message.error("该名字已被使用，请更换名字！");
         return;
       }
 
-      // 2. UUID 判断是否已在房间
+      // UUID 去重
       const hasMe = this.players.some((i) => i.uuid === this.localPlayer.uuid);
       if (hasMe) {
         this.gameStatus.joined = true;
@@ -734,6 +716,7 @@ export default {
       this.gameData.players = this.players;
       await this.saveGame();
       this.gameStatus.joined = true;
+      this.$message.success("加入成功");
     },
 
     createGame() {
@@ -742,7 +725,7 @@ export default {
 
     async doCreateGame() {
       const { roles, pwd } = this.createForm;
-      if (!pwd || pwd.trim() === "") {
+      if (!pwd?.trim()) {
         this.$message.error("请输入管理员密码！");
         return;
       }
@@ -838,6 +821,10 @@ export default {
     },
 
     async sendMsg() {
+      if (!this.judgeMsg.trim()) {
+        this.$message.warning("内容不能为空");
+        return;
+      }
       this.sendMsgLoading = true;
       this.gameData.msg = this.judgeMsg;
       await this.saveGame();
@@ -845,7 +832,7 @@ export default {
       this.sendMsgLoading = false;
     },
 
-    // ====================== 新增：退出对局函数 ======================
+    // 退出对局
     async quitGame() {
       this.$confirm(
         "退出对局后会失去身份牌且移出玩家列表，该操作可能会对本局游戏造成影响，需要更高权限确认",
@@ -863,28 +850,22 @@ export default {
           const pass = await this.checkAdminPassword();
           if (!pass) return;
           this.quitGameLoading = true;
-
-          // 按 UUID 移除自己
           this.players = this.players.filter(
             (p) => p.uuid !== this.localPlayer.uuid
           );
           this.gameData.players = this.players;
-
           await this.saveGame();
-
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
           this.localPlayer.note = "";
           this.saveLocal();
-
           this.gameStatus.joined = false;
           this.quitGameLoading = false;
           this.$message.success("已成功退出对局");
         })
         .catch(() => {});
     },
-    // ==============================================================
 
     async endGame() {
       this.$confirm("结束本局后，其他所有成员也将自动退出, 是否继续?", "提示", {
@@ -928,23 +909,18 @@ export default {
       this.getGame();
     },
 
-    // ====================== 纯新增：投票功能（已修复0号BUG） ======================
+    // 投票统计
     refreshVoteStat() {
       const votes = this.gameData.votes || {};
       const abandons = this.gameData.abandons || [];
       let stat = {};
-
       for (let voterSeq in votes) {
-        // 过滤上帝0号，只统计有身份的玩家
         if (voterSeq == 0) continue;
-
         const target = votes[voterSeq];
         if (!stat[target]) stat[target] = [];
         stat[target].push(Number(voterSeq));
       }
-
       this.voteStat = stat;
-      // 过滤弃票里的0号
       this.abandonList = abandons.filter((num) => num != 0).map(Number);
     },
 
@@ -955,12 +931,10 @@ export default {
       }
       await this.getGame();
       const seq = this.localPlayer.seq;
-      // 上帝不能投票
       if (seq === 0) return;
 
       this.gameData.votes = this.gameData.votes || {};
       this.gameData.abandons = this.gameData.abandons || [];
-
       this.gameData.votes[seq] = this.voteTarget;
 
       const idx = this.gameData.abandons.indexOf(seq);
@@ -978,7 +952,6 @@ export default {
 
       this.gameData.votes = this.gameData.votes || {};
       this.gameData.abandons = this.gameData.abandons || [];
-
       delete this.gameData.votes[seq];
 
       if (!this.gameData.abandons.includes(seq)) {
@@ -990,7 +963,6 @@ export default {
       this.refreshVoteStat();
       this.$message.info("你已弃票");
     },
-    // ==============================================================
   },
 };
 </script>
@@ -1046,6 +1018,5 @@ export default {
 }
 .rounded {
   border-radius: 4px;
-  /* padding: 8px 12px; */
 }
 </style>
