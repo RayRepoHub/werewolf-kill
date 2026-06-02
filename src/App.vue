@@ -105,6 +105,14 @@
       <el-button type="info" @click="refreshAll" class="mb-3">
         刷新信息
       </el-button>
+      <el-button
+        v-if="isJudge"
+        type="primary"
+        class="mb-3 ml-2"
+        @click="godPowerVisible = true"
+      >
+        上帝之力
+      </el-button>
 
       <!-- 👇 非上帝玩家显示退出按钮 -->
       <el-button
@@ -179,7 +187,10 @@
                   v-model="localMarks[p.uuid]"
                   size="mini"
                   placeholder="备注"
-                  :class="{ 'opacity-0': p.uuid === localPlayer.uuid }"
+                  :class="
+                    p.uuid === localPlayer.uuid ? 'opacity-zero-select' : ''
+                  "
+                  :disabled="p.uuid === localPlayer.uuid"
                   style="width: 110px; margin: 4px 8px 4px 0"
                   @change="saveLocalMarks"
                 >
@@ -390,16 +401,23 @@
         </el-button>
       </span>
     </el-dialog>
+    <GodPower
+      :visible.sync="godPowerVisible"
+      :players="players"
+      :game-roles="gameData.roles"
+      @save="handleGodSave"
+    />
   </div>
 </template>
 
 <script>
 import GameSetting from "@/GameSetting.vue";
+import GodPower from "@/GodPower.vue";
 import { ADMIN_PASSWORD } from "@/const.js";
 /* eslint-disable vue/multi-word-component-names */
 export default {
   name: "WerewolfGame",
-  components: { GameSetting },
+  components: { GameSetting, GodPower },
   data() {
     return {
       ADMIN_PASSWORD: ADMIN_PASSWORD,
@@ -441,6 +459,7 @@ export default {
       timer: null,
       localMarks: {}, // 本地备注（永久保存）
       gameRoles: {}, // 本局游戏启用的身份
+      godPowerVisible: false,
     };
   },
   computed: {
@@ -466,6 +485,15 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    async handleGodSave(newPlayers) {
+      // 找到上帝
+      const god = this.players.find((p) => p.role === "上帝");
+      // 合并上帝 + 修改后的玩家
+      this.gameData.players = [god, ...newPlayers];
+      await this.saveGame();
+      this.refreshAll();
+      this.$message.success("上帝之力已生效！");
+    },
     // 加载本地备注
     loadLocalMarks() {
       const data = localStorage.getItem("localMarks");
@@ -1002,6 +1030,23 @@ export default {
 </script>
 
 <style scoped>
+/* 整体透明 */
+:deep(.opacity-zero-select) {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+/* 输入框光标 */
+:deep(.opacity-zero-select .el-input__inner) {
+  cursor: default !important;
+}
+/* 后缀箭头容器 */
+:deep(.opacity-zero-select .el-input__suffix) {
+  cursor: default !important;
+}
+/* 下拉小三角 */
+:deep(.opacity-zero-select .el-select__caret) {
+  cursor: default !important;
+}
 .timer-box {
   font-family: "Courier New", monospace;
   font-size: 32px;

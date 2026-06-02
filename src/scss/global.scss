@@ -8,7 +8,26 @@
     align-items: center;
 }
 
-// 透明度为0
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .opacity-0 {
     opacity: 0;
+}
+
+.text-ellipsis-single {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-click {
+    pointer-events: none;
+}
+
+.cursor-default {
+    cursor: default;
 }
