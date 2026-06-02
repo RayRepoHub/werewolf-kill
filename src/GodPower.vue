@@ -32,7 +32,6 @@
       <el-input-number
         v-model="playerList[idx].seq"
         size="mini"
-        :min="1"
         placeholder="序号"
         style="width: 200px"
       />
@@ -102,7 +101,7 @@ export default {
       }).then(() => {
         this.playerList.forEach((p) => {
           p.role = "";
-          p.seq = 0;
+          p.seq = null;
         });
         this.$message.success("已清空所有玩家身份");
       });
