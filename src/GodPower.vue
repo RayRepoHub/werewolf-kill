@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    title="上帝之力"
+    :title="`${GOD_NAME}之力`"
     :visible="visible"
     @close="handleClose"
     :fullscreen="true"
@@ -68,6 +68,8 @@
 </template>
 
 <script>
+import { GOD_NAME } from "@/const.js";
+
 export default {
   name: "GodPower",
   props: {
@@ -79,13 +81,14 @@ export default {
     return {
       loading: false,
       playerList: [],
+      GOD_NAME: GOD_NAME,
     };
   },
   watch: {
     visible(val) {
       if (val) {
         const list = JSON.parse(JSON.stringify(this.players)).filter(
-          (p) => p.role !== "上帝"
+          (p) => p.role !== this.GOD_NAME
         );
         this.playerList = list;
       }
