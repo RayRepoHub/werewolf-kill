@@ -81,7 +81,9 @@
           </div>
           <div style="font-size: 14px">（{{ role.desc || "暂无描述" }}）</div>
         </div>
-
+        <el-checkbox v-model="enableGodPower" style="margin-bottom: 20px">
+          是否由上帝指派身份
+        </el-checkbox>
         <el-form-item label="管理员密码" :required="true">
           <el-input
             v-model="createForm.pwd"
@@ -160,8 +162,17 @@
               {{ getRoleDesc(localPlayer.role) }}
             </div>
           </div>
+          <div
+            v-if="!isJudge && !localPlayer.role && gameData.enableGodPower"
+            class="mt-3"
+            style="color: #1890ff; font-size: 15px"
+          >
+            请静待上帝派发身份
+          </div>
           <el-button
-            v-if="!isJudge && !localPlayer.role && !gameData.locked"
+            v-else-if="
+              !isJudge && !localPlayer.role && !gameData.enableGodPower
+            "
             type="success"
             class="mt-2"
             @click="drawRole"
@@ -460,6 +471,7 @@ export default {
       localMarks: {}, // 本地备注（永久保存）
       gameRoles: {}, // 本局游戏启用的身份
       godPowerVisible: false,
+      enableGodPower: false, // 是否启用上帝之力
     };
   },
   computed: {
@@ -812,6 +824,7 @@ export default {
         judge: this.localPlayer.name,
         judgePwd: pwd,
         roles: gameRoles,
+        enableGodPower: this.enableGodPower,
         players: [
           {
             uuid: this.localPlayer.uuid,
