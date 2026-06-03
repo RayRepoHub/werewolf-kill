@@ -137,10 +137,6 @@
         结束本局
       </el-button>
 
-      <div v-if="gameData.locked" class="mb-3 p-2 bg-warning rounded">
-        ⚠️ 身份已锁定，不可抽牌
-      </div>
-
       <el-collapse v-model="activeCollapse" style="margin-top: 20px">
         <el-collapse-item name="roleCard">
           <template slot="title">
@@ -371,14 +367,6 @@
                 发布
               </el-button>
             </div>
-            <!-- <el-button
-              v-if="isJudge && !gameData.locked"
-              type="warning"
-              class="mt-2 ml-2"
-              @click="lockRoles"
-            >
-              锁定身份（开局）
-            </el-button> -->
           </div>
           <div
             class="p-2 bg-light rounded"
@@ -831,7 +819,6 @@ export default {
           },
         ],
         msg: "对局已创建",
-        locked: false,
         votes: {},
         abandons: [],
       };
@@ -845,10 +832,7 @@ export default {
 
     async drawRole() {
       const g = this.gameData;
-      if (g.locked) {
-        this.$message.error("已锁定");
-        return;
-      }
+
       let fullDeck = [];
       Object.entries(g.roles).forEach(([name, cnt]) => {
         for (let i = 0; i < cnt; i++) fullDeck.push(name);
@@ -874,12 +858,6 @@ export default {
       this.saveLocal();
       await this.saveGame();
       this.$message.success("抽牌成功");
-    },
-
-    async lockRoles() {
-      this.gameData.locked = true;
-      await this.saveGame();
-      this.$message.success("已锁定");
     },
 
     async toggleDead(seq) {
@@ -957,7 +935,6 @@ export default {
             roles: {},
             players: [],
             msg: "",
-            locked: false,
             votes: {},
             abandons: [],
           };
