@@ -194,14 +194,10 @@
               <template v-if="p.seq && p.role">
                 <!-- 👇 本地私人备注（本局身份 + 存疑）👇 -->
                 <el-select
-                  v-if="!isJudge"
+                  v-if="!isJudge && p.uuid !== localPlayer.uuid"
                   v-model="localMarks[p.uuid]"
                   size="mini"
                   placeholder="备注"
-                  :class="
-                    p.uuid === localPlayer.uuid ? 'opacity-zero-select' : ''
-                  "
-                  :disabled="p.uuid === localPlayer.uuid"
                   style="width: 110px; margin: 4px 8px 4px 0"
                   @change="saveLocalMarks"
                 >
@@ -1045,23 +1041,6 @@ export default {
 </script>
 
 <style scoped>
-/* 整体透明 */
-:deep(.opacity-zero-select) {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-/* 输入框光标 */
-:deep(.opacity-zero-select .el-input__inner) {
-  cursor: default !important;
-}
-/* 后缀箭头容器 */
-:deep(.opacity-zero-select .el-input__suffix) {
-  cursor: default !important;
-}
-/* 下拉小三角 */
-:deep(.opacity-zero-select .el-select__caret) {
-  cursor: default !important;
-}
 .timer-box {
   font-family: "Courier New", monospace;
   font-size: 32px;
