@@ -295,31 +295,30 @@
           </template>
           <div v-if="localPlayer.dead">你已经死亡，无法参与投票</div>
           <div v-else-if="isJudge" style="line-height: 1.8">
-            <div v-for="(voters, targetSeq) in voteStat" :key="targetSeq">
-              {{ targetSeq }}号({{ voters.length }}票)：{{
-                voters.join("号、")
-              }}号
+            <div v-if="Object.keys(voteStat).length || abandonList.length">
+              <div v-for="(voters, targetSeq) in voteStat" :key="targetSeq">
+                {{ targetSeq }}号({{ voters.length }}票)：{{
+                  voters.join("号、")
+                }}号
+              </div>
+              <div
+                style="margin-top: 8px; font-weight: bold"
+                v-if="abandonList && abandonList.length > 0"
+              >
+                弃票：{{ abandonList.join("号、") }}号
+              </div>
+              <!-- 有数据才显示填充按钮 -->
+              <el-button
+                type="success"
+                size="mini"
+                icon="el-icon-copy-document"
+                @click="fillVoteToBroadcast"
+                style="margin-top: 8px"
+              >
+                一键填充投票结果到广播
+              </el-button>
             </div>
-            <div
-              style="margin-top: 8px; font-weight: bold"
-              v-if="
-                abandonList &&
-                abandonList instanceof Array &&
-                abandonList.length > 0
-              "
-            >
-              弃票：{{ abandonList.join("号、") }}号
-            </div>
-            <!-- 上帝专用：一键填充投票结果到广播 -->
-            <el-button
-              type="success"
-              size="mini"
-              icon="el-icon-copy-document"
-              @click="fillVoteToBroadcast"
-              style="margin-top: 8px"
-            >
-              一键填充投票结果到广播
-            </el-button>
+            <div v-else>暂无投票信息</div>
           </div>
           <div v-else-if="localPlayer.role && localPlayer.seq">
             <el-input
