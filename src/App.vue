@@ -730,6 +730,11 @@ export default {
           this.saveLocal();
         } else {
           this.gameStatus.joined = false;
+          // 退出房间 → 强制清空身份
+          this.localPlayer.role = "";
+          this.localPlayer.seq = 0;
+          this.localPlayer.dead = false;
+          this.saveLocal();
         }
         this.isJudge = this.gameData.judge === this.localPlayer.name;
         this.refreshVoteStat();
