@@ -895,7 +895,7 @@ export default {
     // 退出对局
     async quitGame() {
       this.$confirm(
-        "退出对局后会失去身份牌且移出玩家列表，该操作可能会对本局游戏造成影响，需要更高权限确认",
+        "退出对局后会失去身份牌且移出玩家列表，该操作可能会对本局游戏造成影响，需要更高权限确认（还没有身份的玩家则不需要）",
         "提示",
         {
           confirmButtonText: "确定退出",
@@ -907,8 +907,10 @@ export default {
         }
       )
         .then(async () => {
-          const pass = await this.checkAdminPassword();
-          if (!pass) return;
+          if (this.localPlayer?.role) {
+            const pass = await this.checkAdminPassword();
+            if (!pass) return;
+          }
           this.quitGameLoading = true;
           this.players = this.players.filter(
             (p) => p.uuid !== this.localPlayer.uuid
