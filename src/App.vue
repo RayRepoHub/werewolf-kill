@@ -82,7 +82,7 @@
           <div style="font-size: 14px">（{{ role.desc || "暂无描述" }}）</div>
         </div>
         <el-checkbox v-model="enableGodPower" style="margin-bottom: 20px">
-          是否由上帝指派身份
+          是否由{{ GOD_NAME }}指派身份
         </el-checkbox>
         <el-form-item label="管理员密码" :required="true">
           <el-input
@@ -113,7 +113,7 @@
         class="mb-3 ml-2"
         @click="godPowerVisible = true"
       >
-        上帝之力
+        {{ GOD_NAME }}之力
       </el-button>
 
       <!-- 👇 非上帝玩家显示退出按钮 -->
@@ -142,7 +142,7 @@
           <template slot="title">
             我的身份<i class="el-icon-s-custom" style="margin-left: 4px" />
           </template>
-          <div v-if="isJudge" class="font-bold">上帝</div>
+          <div v-if="isJudge" class="font-bold">{{ GOD_NAME }}</div>
           <div class="font-bold" v-else-if="localPlayer.role">
             {{ localPlayer.seq }} - {{ localPlayer.role }}({{
               localPlayer.name
@@ -163,7 +163,7 @@
             class="mt-3"
             style="color: #1890ff; font-size: 15px"
           >
-            请静待上帝派发身份
+            请静待{{ GOD_NAME }}派发身份
           </div>
           <el-button
             v-else-if="
@@ -218,7 +218,7 @@
               </template>
             </span>
             <span
-              v-if="(p.role && isJudge) || p.role === '上帝'"
+              v-if="(p.role && isJudge) || p.role === GOD_NAME"
               class="ml-2 text-muted"
             >
               {{ `(${p.role})` }}
@@ -346,7 +346,10 @@
 
         <el-collapse-item name="godBroadcast">
           <template slot="title">
-            上帝广播<i class="el-icon-message-solid" style="margin-left: 4px" />
+            {{ GOD_NAME }}广播<i
+              class="el-icon-message-solid"
+              style="margin-left: 4px"
+            />
           </template>
           <div v-if="isJudge" class="mb-2">
             <el-input
@@ -399,7 +402,7 @@
     <GodPower
       :visible.sync="godPowerVisible"
       :players="players"
-      :game-roles="gameData.roles"
+      :game-roles="gameRoles"
       @save="handleGodSave"
     />
   </div>
@@ -409,12 +412,15 @@
 import GameSetting from "@/GameSetting.vue";
 import GodPower from "@/GodPower.vue";
 import { ADMIN_PASSWORD } from "@/const.js";
+import { GOD_NAME } from "@/const.js"; // 引入常量
+
 /* eslint-disable vue/multi-word-component-names */
 export default {
   name: "WerewolfGame",
   components: { GameSetting, GodPower },
   data() {
     return {
+      GOD_NAME: GOD_NAME, // 注入模板使用
       ADMIN_PASSWORD: ADMIN_PASSWORD,
       tempName: "",
       localPlayer: {},
@@ -483,12 +489,12 @@ export default {
   methods: {
     async handleGodSave(newPlayers) {
       // 找到上帝
-      const god = this.players.find((p) => p.role === "上帝");
+      const god = this.players.find((p) => p.role === this.GOD_NAME);
       // 合并上帝 + 修改后的玩家
       this.gameData.players = [god, ...newPlayers];
       await this.saveGame();
       this.refreshAll();
-      this.$message.success("上帝之力已生效！");
+      this.$message.success(`${this.GOD_NAME}之力已生效！`);
     },
     // 加载本地备注
     loadLocalMarks() {
@@ -692,8 +698,8 @@ export default {
 
         // 排序：上帝 → 序号 → 旁观者
         this.players.sort((a, b) => {
-          if (a.role === "上帝") return -1;
-          if (b.role === "上帝") return 1;
+          if (a.role === this.GOD_NAME) return -1;
+          if (b.role === this.GOD_NAME) return 1;
           const aHasSeq = a.seq > 0;
           const bHasSeq = b.seq > 0;
           if (aHasSeq && bHasSeq) return a.seq - b.seq;
@@ -715,7 +721,7 @@ export default {
             note: "",
           };
           this.saveLocal();
-          this.$message.info("上帝已结束对局");
+          this.$message.info(`${this.GOD_NAME}已结束对局`);
         }
 
         const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
@@ -813,7 +819,7 @@ export default {
           {
             uuid: this.localPlayer.uuid,
             name: this.localPlayer.name,
-            role: "上帝",
+            role: this.GOD_NAME,
             seq: 0,
             dead: false,
           },
@@ -838,7 +844,7 @@ export default {
         for (let i = 0; i < cnt; i++) fullDeck.push(name);
       });
       this.players.forEach((p) => {
-        if (p.role && p.role !== "上帝") {
+        if (p.role && p.role !== this.GOD_NAME) {
           const idx = fullDeck.indexOf(p.role);
           if (idx > -1) fullDeck.splice(idx, 1);
         }
