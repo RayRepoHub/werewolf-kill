@@ -816,7 +816,6 @@ export default {
       }
       this.gameData = {
         judge: this.localPlayer.name,
-        judgePwd: pwd,
         roles: gameRoles,
         enableGodPower: this.enableGodPower,
         players: [
@@ -941,7 +940,6 @@ export default {
           this.endLoading = true;
           this.gameData = {
             judge: "",
-            judgePwd: "",
             roles: {},
             players: [],
             msg: "",
