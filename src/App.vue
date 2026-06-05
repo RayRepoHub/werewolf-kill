@@ -439,12 +439,9 @@ export default {
       players: [],
       isJudge: false,
       judgeMsg: "",
-      BIN_ID: "6a0f0ecb6610dd3ae88104e3",
-      API_KEY: "$2a$10$Z9GMvjcEgBICbobvUeAOp.m7Wg/8FiUiblHXiv7XfVrpxAMEwOz3W",
+      API_BASE: "http://localhost:3333",
       roleSettingVisible: false,
 
-      // 身份独立配置BIN 👇 把这里换成你新建的那个身份BIN ID
-      settingBinId: "6a12952e6610dd3ae897b04a",
       saveRoleLoading: false,
       quitGameLoading: false,
       sendMsgLoading: false,
@@ -559,14 +556,9 @@ export default {
     // 读取身份配置（独立BIN）
     async getRoleConfig() {
       try {
-        const res = await fetch(
-          `https://api.jsonbin.io/v3/b/${this.settingBinId}`,
-          {
-            headers: { "X-Master-Key": this.API_KEY },
-          }
-        );
+        const res = await fetch(`${this.API_BASE}/roleData`);
         const data = await res.json();
-        this.roleConfigList = data.record || [];
+        this.roleConfigList = data.roleListArr || [];
         this.rebuildCreateForm();
       } catch (e) {
         console.log(e);
@@ -578,13 +570,13 @@ export default {
       this.saveRoleLoading = true;
       const final = this.$refs.setting.getFinalList();
       try {
-        await fetch(`https://api.jsonbin.io/v3/b/${this.settingBinId}`, {
+        // 包成对象再PUT
+        await fetch(`${this.API_BASE}/roleData`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "X-Master-Key": this.API_KEY,
           },
-          body: JSON.stringify(final),
+          body: JSON.stringify({ roleListArr: final }),
         });
         this.roleConfigList = final;
         this.rebuildCreateForm();
@@ -644,18 +636,14 @@ export default {
 
     async fetch(url, options = {}) {
       try {
-        const headers = {
-          "Content-Type": "application/json",
-          "X-Master-Key": this.API_KEY,
-        };
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
-          headers,
+        const res = await fetch(`${this.API_BASE}/roomData`, {
+          headers: { "Content-Type": "application/json" },
           ...options,
         });
         return await res.json();
       } catch (e) {
         console.error("请求异常", e);
-        return { record: this.gameData || {} };
+        return this.gameData || {};
       }
     },
     loadLocal() {
@@ -691,7 +679,7 @@ export default {
       this.refreshLoading = true;
       try {
         const res = await this.fetch();
-        this.gameData = res.record || {};
+        this.gameData = res || {};
         this.gameRoles = this.gameData.roles || {};
         this.players = this.gameData.players || [];
 
