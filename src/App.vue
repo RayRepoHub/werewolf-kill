@@ -439,7 +439,7 @@ export default {
       players: [],
       isJudge: false,
       judgeMsg: "",
-      API_BASE: "http://localhost:3333",
+      API_BASE: "http://192.168.0.104:3000",
       roleSettingVisible: false,
 
       saveRoleLoading: false,
