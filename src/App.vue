@@ -439,7 +439,8 @@ export default {
       players: [],
       isJudge: false,
       judgeMsg: "",
-      API_BASE: "http://192.168.0.104:3000",
+      // API_BASE: "http://192.168.0.104:3000",
+      API_BASE: "https://werewolf-kill-server.vercel.app",
       roleSettingVisible: false,
 
       saveRoleLoading: false,
