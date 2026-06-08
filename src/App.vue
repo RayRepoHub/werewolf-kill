@@ -439,8 +439,10 @@ export default {
       players: [],
       isJudge: false,
       judgeMsg: "",
-      // API_BASE: "http://192.168.0.104:3000",
-      API_BASE: "https://werewolf-kill-server.vercel.app",
+      // API_BASE: "http://192.168.0.104:3000", // 局域网地址
+      // API_BASE: "https://werewolf-kill-server.vercel.app", // Vercel 地址
+      API_BASE:
+        "https://6eab61fd-289f-4496-8661-7e653ebe7104-00-3im5epkvmlqy1.pike.replit.dev/api", // Replit 地址
       roleSettingVisible: false,
 
       saveRoleLoading: false,
