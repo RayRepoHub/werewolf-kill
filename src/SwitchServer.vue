@@ -2,17 +2,36 @@
  * @Author: YangRui
  * @Date: 2026-06-09 20:32:47
  * @LastEditors: YangRui
- * @LastEditTime: 2026-06-09 22:17:19
+ * @LastEditTime: 2026-06-09 23:33:21
  * @Description: 切换后端服务
 -->
 <template>
   <el-dialog
-    title="切换后端服务"
+    title="切换服务"
     :visible.sync="dialogVisible"
     append-to-body
     :fullscreen="true"
     :show-close="false"
   >
+    <!-- 👇 新增：红色重要提示 👇 -->
+    <div
+      style="
+        background-color: #fff2f2;
+        border: 1px solid #fef0f0;
+        color: #d93030;
+        padding: 12px 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        line-height: 1.6;
+      "
+    >
+      <div style="font-weight: bold; margin-bottom: 4px">⚠️ 重要提示</div>
+      <div>
+        不同服务的数据相互独立，所有玩家必须切换至<b>同一个服务</b>，才能进入同一局游戏。
+      </div>
+      <div style="margin-top: 4px">请确认所有人选择一致后再进行游戏。</div>
+    </div>
+
     <el-form label-width="80px">
       <el-form-item label="选择服务">
         <el-select

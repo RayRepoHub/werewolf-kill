@@ -702,8 +702,32 @@ export default {
     },
     async getGame() {
       this.refreshLoading = true;
+
+      // 7秒超时定时器
+      const timeout = setTimeout(() => {
+        this.$msgbox({
+          title: "请求超时",
+          message: "当前服务响应过慢，是否立即切换到其他服务？",
+          type: "warning",
+          center: true,
+          showClose: false,
+          showCancelButton: true,
+          confirmButtonText: "去切换",
+          cancelButtonText: "继续等待",
+        })
+          .then(() => {
+            // 确认：打开切换服务弹窗
+            this.switchServerVisible = true;
+          })
+          .catch(() => {
+            // 取消：继续等待，不做任何操作，捕获报错
+          });
+      }, 7000);
+
       try {
         const res = await this.fetch();
+        clearTimeout(timeout); // 请求正常结束，清除超时
+
         this.gameData = res || {};
         this.gameRoles = this.gameData.roles || {};
         this.players = this.gameData.players || [];
@@ -752,8 +776,10 @@ export default {
         this.isJudge = this.gameData.judge === this.localPlayer.name;
         this.refreshVoteStat();
       } catch (err) {
+        clearTimeout(timeout);
         this.$message.error("刷新失败");
       }
+
       this.refreshLoading = false;
     },
     async saveGame() {
