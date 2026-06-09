@@ -46,6 +46,14 @@
           加入对局
         </el-button>
         <el-button type="info" @click="askGameSetting"> 身份管理 </el-button>
+        <el-button
+          type="primary"
+          plain
+          style="margin-left: 10px"
+          @click="switchServerVisible = true"
+        >
+          切换服务
+        </el-button>
       </div>
     </div>
 
@@ -404,19 +412,23 @@
       :game-roles="gameRoles"
       @save="handleGodSave"
     />
+    <SwitchServer
+      :visible.sync="switchServerVisible"
+      @change="onServerChange"
+    />
   </div>
 </template>
 
 <script>
 import GameSetting from "@/GameSetting.vue";
 import GodPower from "@/GodPower.vue";
-import { ADMIN_PASSWORD } from "@/const.js";
-import { GOD_NAME } from "@/const.js"; // 引入常量
+import { ADMIN_PASSWORD, GOD_NAME, API_SERVERS } from "@/const.js"; // 加 API_SERVERS
+import SwitchServer from "@/SwitchServer.vue"; // 新增
 
 /* eslint-disable vue/multi-word-component-names */
 export default {
   name: "WerewolfGame",
-  components: { GameSetting, GodPower },
+  components: { GameSetting, GodPower, SwitchServer },
   data() {
     return {
       GOD_NAME: GOD_NAME, // 注入模板使用
@@ -439,10 +451,7 @@ export default {
       players: [],
       isJudge: false,
       judgeMsg: "",
-      // API_BASE: "http://192.168.0.104:3000", // 局域网地址
-      // API_BASE: "https://werewolf-kill-server.vercel.app", // Vercel 地址
-      API_BASE:
-        "https://6eab61fd-289f-4496-8661-7e653ebe7104-00-3im5epkvmlqy1.pike.replit.dev/api", // Replit 地址
+      API_BASE: "", // 后端服务地址，从常量文件读取
       roleSettingVisible: false,
 
       saveRoleLoading: false,
@@ -461,6 +470,7 @@ export default {
       gameRoles: {}, // 本局游戏启用的身份
       godPowerVisible: false,
       enableGodPower: false, // 是否启用上帝之力
+      switchServerVisible: false,
     };
   },
   computed: {
@@ -477,15 +487,28 @@ export default {
     },
   },
   mounted() {
+    this.API_BASE = this.getCurrentApiBase(); // 初始化 API_BASE
     this.loadLocal();
+    this.loadLocalMarks();
     this.getRoleConfig();
     this.getGame();
-    this.loadLocalMarks();
   },
   beforeDestroy() {
     clearInterval(this.timer);
   },
   methods: {
+    getCurrentApiBase() {
+      let savedKey =
+        localStorage.getItem("werewolf_server") || API_SERVERS.default;
+      if (!API_SERVERS.list[savedKey]) {
+        savedKey = API_SERVERS.default;
+      }
+      return API_SERVERS.list[savedKey].url;
+    },
+    onServerChange(api) {
+      this.API_BASE = api;
+      location.reload();
+    },
     async handleGodSave(newPlayers) {
       // 找到上帝
       const god = this.players.find((p) => p.role === this.GOD_NAME);
