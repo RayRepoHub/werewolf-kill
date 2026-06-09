@@ -1,10 +1,9 @@
 <template>
   <div class="werewolf-game-container" v-loading="refreshLoading">
-    <h2 class="text-center mb-4">狼人杀对局平台</h2>
+    <h2 class="text-center">狼人杀对局平台</h2>
 
     <div
       v-if="(!localPlayer.name || editingName) && !gameStatus.joined"
-      class="mb-4"
       style="
         display: flex;
         justify-content: center;
@@ -57,7 +56,7 @@
       </div>
     </div>
 
-    <div v-if="showCreatePanel" class="mb-4" style="margin-top: 20px">
+    <div v-if="showCreatePanel && !gameStatus.joined" style="margin-top: 20px">
       <el-form label-width="100px">
         <div
           v-for="role in roleConfigList"
@@ -800,7 +799,7 @@ export default {
     },
 
     createGame() {
-      this.showCreatePanel = true;
+      this.showCreatePanel = !this.showCreatePanel;
     },
 
     async doCreateGame() {
