@@ -88,9 +88,26 @@
           </div>
           <div style="font-size: 14px">（{{ role.desc || "暂无描述" }}）</div>
         </div>
-        <el-checkbox v-model="enableGodPower" style="margin-bottom: 20px">
-          是否由{{ GOD_NAME }}指派身份
-        </el-checkbox>
+        <div
+          style="
+            background: #f8f9fa;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+          "
+        >
+          <el-checkbox
+            v-model="enableGodPower"
+            style="font-size: 14px; font-weight: 500"
+          >
+            是否由
+            <span style="color: #1890ff; font-weight: bold">{{
+              GOD_NAME
+            }}</span>
+            指派身份
+          </el-checkbox>
+        </div>
         <el-form-item label="管理员密码" :required="true">
           <el-input
             v-model="createForm.pwd"
@@ -378,10 +395,19 @@
             </div>
           </div>
           <div
-            class="p-2 bg-light rounded"
-            style="white-space: pre-wrap; word-break: break-all"
+            style="
+              background: #f0f7ff;
+              border-left: 4px solid #1890ff;
+              padding: 14px;
+              border-radius: 6px;
+              white-space: pre-wrap;
+              word-break: break-all;
+              min-height: 50px;
+              line-height: 1.6;
+              color: #333;
+            "
           >
-            {{ gameData.msg || "暂无内容" }}
+            {{ gameData.msg || "暂无公告内容" }}
           </div>
         </el-collapse-item>
       </el-collapse>
@@ -716,17 +742,14 @@ export default {
           cancelButtonText: "继续等待",
         })
           .then(() => {
-            // 确认：打开切换服务弹窗
             this.switchServerVisible = true;
           })
-          .catch(() => {
-            // 取消：继续等待，不做任何操作，捕获报错
-          });
+          .catch(() => {});
       }, 7000);
 
       try {
         const res = await this.fetch();
-        clearTimeout(timeout); // 请求正常结束，清除超时
+        clearTimeout(timeout);
 
         this.gameData = res || {};
         this.gameRoles = this.gameData.roles || {};
@@ -744,35 +767,28 @@ export default {
           return 0;
         });
 
-        const beforeJoined = this.gameStatus.joined;
         this.gameStatus.exist = !!this.gameData.judge;
 
-        if (beforeJoined && !this.gameStatus.exist) {
-          this.gameStatus.joined = false;
-          this.localPlayer = {
-            ...this.localPlayer,
-            role: "",
-            seq: 0,
-            dead: false,
-            note: "",
-          };
-          this.saveLocal();
-          this.$message.info(`${this.GOD_NAME}已结束对局`);
-        }
-
+        // ======================================
+        // 【修复点】只找自己是否在列表里，不主动退出
+        // ======================================
         const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
-        if (me) {
+
+        if (this.gameStatus.exist && me) {
+          // 房间存在 + 自己还在列表里 → 保持加入状态
           this.gameStatus.joined = true;
           this.localPlayer = { ...this.localPlayer, ...me };
           this.saveLocal();
-        } else {
+        } else if (!this.gameStatus.exist) {
+          // 房间被上帝解散了
           this.gameStatus.joined = false;
-          // 退出房间 → 强制清空身份
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
           this.saveLocal();
         }
+        // 【重要】如果房间还存在，但自己不在列表里 → 不修改 joined 状态！
+
         this.isJudge = this.gameData.judge === this.localPlayer.name;
         this.refreshVoteStat();
       } catch (err) {
