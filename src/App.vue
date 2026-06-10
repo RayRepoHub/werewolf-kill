@@ -54,70 +54,6 @@
       </div>
     </div>
 
-    <!-- 创建对局配置面板 -->
-    <div v-if="showCreatePanel && !gameStatus.joined" style="margin-top: 20px">
-      <el-form label-width="100px">
-        <div
-          v-for="role in roleConfigList"
-          v-show="role.enabled"
-          :key="role.name"
-          style="margin-bottom: 20px"
-        >
-          <div
-            class="w-full flex-between"
-            style="height: 30px; margin-bottom: 4px"
-          >
-            <el-checkbox v-model="createForm.roles[role.name].enabled">
-              {{ role.name }}
-            </el-checkbox>
-            <el-input-number
-              v-if="createForm.roles[role.name].enabled"
-              v-model="createForm.roles[role.name].count"
-              :min="1"
-              size="mini"
-            />
-          </div>
-          <div style="font-size: 14px">（{{ role.desc || "暂无描述" }}）</div>
-        </div>
-        <div
-          style="
-            background: #f8f9fa;
-            padding: 10px 14px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border: 1px solid #e9ecef;
-          "
-        >
-          <el-checkbox
-            v-model="enableGodPower"
-            style="font-size: 14px; font-weight: 500"
-          >
-            是否由
-            <span style="color: #1890ff; font-weight: bold">{{
-              GOD_NAME
-            }}</span>
-            指派身份
-          </el-checkbox>
-        </div>
-        <el-form-item label="管理员密码" :required="true">
-          <el-input
-            v-model="createForm.pwd"
-            show-password
-            placeholder="请输入管理员密码"
-          />
-        </el-form-item>
-      </el-form>
-      <div style="width: 100%; display: flex; justify-content: end">
-        <el-button
-          type="primary"
-          @click="doCreateGame"
-          :loading="createLoading"
-        >
-          创建
-        </el-button>
-      </div>
-    </div>
-
     <!-- 已加入对局：游戏主面板 -->
     <div v-else-if="gameStatus.joined">
       <el-button type="info" @click="refreshAll" class="mb-3">
@@ -411,6 +347,14 @@
       </el-collapse>
     </div>
 
+    <!-- 创建对局弹窗 -->
+    <CreateGameDialog
+      :visible.sync="createDialogVisible"
+      :role-config-list="roleConfigList"
+      :local-player="localPlayer"
+      @create="onCreateGame"
+    />
+
     <!-- 身份管理弹窗 -->
     <el-dialog
       title="身份管理"
@@ -452,11 +396,17 @@
 import GameSetting from "@/GameSetting.vue";
 import GodPower from "@/GodPower.vue";
 import SwitchServer from "@/SwitchServer.vue";
+import CreateGameDialog from "@/CreateGameDialog.vue";
 import { ADMIN_PASSWORD, GOD_NAME, API_SERVERS } from "@/const.js";
 
 export default {
   name: "WerewolfGame",
-  components: { GameSetting, GodPower, SwitchServer },
+  components: {
+    GameSetting,
+    GodPower,
+    SwitchServer,
+    CreateGameDialog,
+  },
 
   data() {
     return {
@@ -467,7 +417,7 @@ export default {
       tempName: "", // 临时编辑昵称
       localPlayer: {}, // 当前本地玩家信息
       activeCollapse: ["roleCard", "playerList", "gameNotes"], // 默认展开的折叠面板
-      showCreatePanel: false, // 是否显示创建对局面板
+      createDialogVisible: false, // 创建对局弹窗显隐
 
       // 加载状态
       createLoading: false,
@@ -940,49 +890,24 @@ export default {
     },
 
     /**
-     * 展开/收起创建对局面板
+     * 打开创建对局弹窗
      */
     createGame() {
-      this.showCreatePanel = !this.showCreatePanel;
+      this.createDialogVisible = true;
     },
 
     /**
-     * 提交创建对局
+     * 接收子组件参数，执行创建对局逻辑
      */
-    async doCreateGame() {
-      const { roles, pwd } = this.createForm;
-      if (!pwd?.trim()) {
-        this.$message.error("请输入管理员密码！");
-        return;
-      }
-      if (pwd !== this.ADMIN_PASSWORD) {
-        this.$message.error("密码错误！");
-        return;
-      }
+    async onCreateGame(params) {
+      const { gameRoles, enableGodPower } = params;
       this.createLoading = true;
-
-      // 统计选中身份与总人数
-      const gameRoles = {};
-      let total = 0;
-      this.roleConfigList.forEach((item) => {
-        const cfg = roles[item.name];
-        if (cfg?.enabled) {
-          gameRoles[item.name] = cfg.count;
-          total += cfg.count;
-        }
-      });
-
-      if (total < 3) {
-        this.createLoading = false;
-        this.$message.warning("至少3人");
-        return;
-      }
 
       // 初始化对局数据
       this.gameData = {
         judge: this.localPlayer.name,
         roles: gameRoles,
-        enableGodPower: this.enableGodPower,
+        enableGodPower: enableGodPower,
         players: [
           {
             uuid: this.localPlayer.uuid,
@@ -998,7 +923,7 @@ export default {
       };
       await this.saveGame();
       this.createLoading = false;
-      this.showCreatePanel = false;
+      this.createDialogVisible = false;
       this.gameStatus = { exist: true, joined: true };
       this.isJudge = true;
       this.refreshAll();
