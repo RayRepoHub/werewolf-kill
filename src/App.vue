@@ -767,11 +767,9 @@ export default {
           return 0;
         });
 
+        const beforeJoined = this.gameStatus.joined;
         this.gameStatus.exist = !!this.gameData.judge;
 
-        // ======================================
-        // 【修复点】只找自己是否在列表里，不主动退出
-        // ======================================
         const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
 
         if (this.gameStatus.exist && me) {
@@ -786,8 +784,14 @@ export default {
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
           this.saveLocal();
+
+          // ======================================
+          // 【修复】这里加上提示！
+          // ======================================
+          if (beforeJoined) {
+            this.$message.info(`${this.GOD_NAME}已结束对局`);
+          }
         }
-        // 【重要】如果房间还存在，但自己不在列表里 → 不修改 joined 状态！
 
         this.isJudge = this.gameData.judge === this.localPlayer.name;
         this.refreshVoteStat();
