@@ -5,12 +5,8 @@
     <!-- 未设置昵称 / 编辑昵称 且 未加入对局 -->
     <div
       v-if="(!localPlayer.name || editingName) && !gameStatus.joined"
-      style="
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-      "
+      class="flex-center"
+      style="gap: 10px"
     >
       <el-input
         v-model="tempName"
@@ -68,14 +64,8 @@
           style="margin-bottom: 20px"
         >
           <div
-            style="
-              width: 100%;
-              height: 30px;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 4px;
-            "
+            class="w-full flex-between"
+            style="height: 30px; margin-bottom: 4px"
           >
             <el-checkbox v-model="createForm.roles[role.name].enabled">
               {{ role.name }}
@@ -84,7 +74,6 @@
               v-if="createForm.roles[role.name].enabled"
               v-model="createForm.roles[role.name].count"
               :min="1"
-              class="ml-3"
               size="mini"
             />
           </div>
@@ -199,7 +188,6 @@
               !isJudge && !localPlayer.role && !gameData.enableGodPower
             "
             type="success"
-            class="mt-2"
             @click="drawRole"
           >
             抽取身份牌
@@ -396,10 +384,9 @@
               <el-button
                 type="primary"
                 size="mini"
-                class="mt-2"
                 @click="sendMsg"
                 :loading="sendMsgLoading"
-                style="margin-top: 8px"
+                style="margin: 8px 0"
               >
                 发布
               </el-button>

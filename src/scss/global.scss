@@ -2,9 +2,25 @@
     width: 100%;
 }
 
+.h-full {
+    height: 100%;
+}
+
+.flex-start {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
 .flex-end {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+}
+
+.flex-center {
+    display: flex;
+    justify-content: center;
     align-items: center;
 }
 
