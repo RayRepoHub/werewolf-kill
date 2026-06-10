@@ -2,6 +2,7 @@
   <div class="werewolf-game-container" v-loading="refreshLoading">
     <h2 class="text-center">狼人杀对局平台</h2>
 
+    <!-- 未设置昵称 / 编辑昵称 且 未加入对局 -->
     <div
       v-if="(!localPlayer.name || editingName) && !gameStatus.joined"
       style="
@@ -22,6 +23,7 @@
       <el-button v-if="editingName" @click="cancelEditName"> 取消 </el-button>
     </div>
 
+    <!-- 已设置昵称，但未加入对局：功能操作区 -->
     <div
       v-else-if="localPlayer.name && !gameStatus.joined"
       style="text-align: center; margin-bottom: 16px"
@@ -56,13 +58,13 @@
       </div>
     </div>
 
+    <!-- 创建对局配置面板 -->
     <div v-if="showCreatePanel && !gameStatus.joined" style="margin-top: 20px">
       <el-form label-width="100px">
         <div
           v-for="role in roleConfigList"
           v-show="role.enabled"
           :key="role.name"
-          class="mb-3"
           style="margin-bottom: 20px"
         >
           <div
@@ -127,6 +129,7 @@
       </div>
     </div>
 
+    <!-- 已加入对局：游戏主面板 -->
     <div v-else-if="gameStatus.joined">
       <el-button type="info" @click="refreshAll" class="mb-3">
         刷新信息
@@ -140,7 +143,7 @@
         {{ GOD_NAME }}之力
       </el-button>
 
-      <!-- 👇 非上帝玩家显示退出按钮 -->
+      <!-- 普通玩家退出按钮 -->
       <el-button
         type="warning"
         @click="quitGame"
@@ -151,6 +154,7 @@
         退出对局
       </el-button>
 
+      <!-- 上帝结束对局按钮 -->
       <el-button
         type="danger"
         @click="endGame"
@@ -162,6 +166,7 @@
       </el-button>
 
       <el-collapse v-model="activeCollapse" style="margin-top: 20px">
+        <!-- 我的身份面板 -->
         <el-collapse-item name="roleCard">
           <template slot="title">
             我的身份<i class="el-icon-s-custom" style="margin-left: 4px" />
@@ -201,6 +206,7 @@
           </el-button>
         </el-collapse-item>
 
+        <!-- 玩家列表面板 -->
         <el-collapse-item name="playerList">
           <template slot="title">
             玩家列表<i class="el-icon-s-order" style="margin-left: 4px" />
@@ -212,7 +218,7 @@
           >
             <span :class="{ dead: p.dead }">
               <template v-if="p.seq && p.role">
-                <!-- 👇 本地私人备注（本局身份 + 存疑）👇 -->
+                <!-- 玩家私人备注下拉框 -->
                 <el-select
                   v-if="!isJudge && p.uuid !== localPlayer.uuid"
                   v-model="localMarks[p.uuid]"
@@ -249,6 +255,7 @@
             </span>
             <span v-else-if="!p.role" class="ml-2 text-muted"> (旁观者) </span>
 
+            <!-- 上帝标记玩家生死 -->
             <el-button
               v-if="isJudge && p.seq"
               type="text"
@@ -261,6 +268,8 @@
             </el-button>
           </div>
         </el-collapse-item>
+
+        <!-- 游戏笔记面板 -->
         <el-collapse-item name="gameNotes">
           <template slot="title">
             游戏笔记<i class="el-icon-info" style="margin-left: 4px" />
@@ -285,6 +294,8 @@
             </el-button>
           </div>
         </el-collapse-item>
+
+        <!-- 进程计时面板 -->
         <el-collapse-item name="processTimer">
           <template slot="title">
             进程计时<i class="el-icon-s-opportunity" style="margin-left: 4px" />
@@ -312,7 +323,8 @@
             </div>
           </div>
         </el-collapse-item>
-        <!-- ====================== 新增：投票信息面板 ====================== -->
+
+        <!-- 投票信息面板 -->
         <el-collapse-item name="voteInfo">
           <template slot="title">
             投票信息<i class="el-icon-s-ticket" style="margin-left: 4px" />
@@ -331,7 +343,6 @@
               >
                 弃票：{{ abandonList.join("号、") }}号
               </div>
-              <!-- 有数据才显示填充按钮 -->
               <el-button
                 type="success"
                 size="mini"
@@ -365,8 +376,8 @@
           </div>
           <div v-else>请先抽取身份后再投票</div>
         </el-collapse-item>
-        <!-- =================================================================== -->
 
+        <!-- 上帝广播面板 -->
         <el-collapse-item name="godBroadcast">
           <template slot="title">
             {{ GOD_NAME }}广播<i
@@ -413,6 +424,7 @@
       </el-collapse>
     </div>
 
+    <!-- 身份管理弹窗 -->
     <el-dialog
       title="身份管理"
       :visible.sync="roleSettingVisible"
@@ -431,12 +443,16 @@
         </el-button>
       </span>
     </el-dialog>
+
+    <!-- 上帝身份分配弹窗 -->
     <GodPower
       :visible.sync="godPowerVisible"
       :players="players"
       :game-roles="gameRoles"
       @save="handleGodSave"
     />
+
+    <!-- 切换服务弹窗 -->
     <SwitchServer
       :visible.sync="switchServerVisible"
       @change="onServerChange"
@@ -445,60 +461,72 @@
 </template>
 
 <script>
+// 引入子组件与全局常量
 import GameSetting from "@/GameSetting.vue";
 import GodPower from "@/GodPower.vue";
-import { ADMIN_PASSWORD, GOD_NAME, API_SERVERS } from "@/const.js"; // 加 API_SERVERS
-import SwitchServer from "@/SwitchServer.vue"; // 新增
+import SwitchServer from "@/SwitchServer.vue";
+import { ADMIN_PASSWORD, GOD_NAME, API_SERVERS } from "@/const.js";
 
-/* eslint-disable vue/multi-word-component-names */
 export default {
   name: "WerewolfGame",
   components: { GameSetting, GodPower, SwitchServer },
+
   data() {
     return {
-      GOD_NAME: GOD_NAME, // 注入模板使用
-      ADMIN_PASSWORD: ADMIN_PASSWORD,
-      tempName: "",
-      localPlayer: {},
-      activeCollapse: ["roleCard", "playerList", "gameNotes"],
-      showCreatePanel: false,
+      // 全局常量映射到模板
+      GOD_NAME,
+      ADMIN_PASSWORD,
+
+      tempName: "", // 临时编辑昵称
+      localPlayer: {}, // 当前本地玩家信息
+      activeCollapse: ["roleCard", "playerList", "gameNotes"], // 默认展开的折叠面板
+      showCreatePanel: false, // 是否显示创建对局面板
+
+      // 加载状态
       createLoading: false,
       endLoading: false,
       refreshLoading: false,
-      editingName: false,
-      originalName: "",
+      editingName: false, // 是否处于编辑昵称状态
+      originalName: "", // 编辑昵称前的原始名称
 
-      roleConfigList: [],
-      createForm: { roles: {}, pwd: "" },
+      roleConfigList: [], // 全局身份配置列表
+      createForm: { roles: {}, pwd: "" }, // 创建对局表单
 
-      gameData: {},
-      gameStatus: { exist: false, joined: false },
-      players: [],
-      isJudge: false,
-      judgeMsg: "",
-      API_BASE: "", // 后端服务地址，从常量文件读取
-      roleSettingVisible: false,
+      gameData: {}, // 对局全局数据
+      gameStatus: { exist: false, joined: false }, // 对局状态：是否存在、是否已加入
+      players: [], // 在线玩家列表
+      isJudge: false, // 当前用户是否为上帝
+      judgeMsg: "", // 上帝广播内容
+      API_BASE: "", // 当前接口服务地址
+      roleSettingVisible: false, // 身份管理弹窗显示状态
 
       saveRoleLoading: false,
       quitGameLoading: false,
       sendMsgLoading: false,
 
-      // === 投票新增变量 ===
-      voteTarget: null,
-      voteStat: {},
-      abandonList: [],
+      // 投票相关
+      voteTarget: null, // 玩家投票目标序号
+      voteStat: {}, // 投票统计结果
+      abandonList: [], // 弃票玩家列表
+
+      // 计时器相关
       running: false,
       startTime: 0,
       elapsed: 0,
       timer: null,
-      localMarks: {}, // 本地备注（永久保存）
-      gameRoles: {}, // 本局游戏启用的身份
-      godPowerVisible: false,
-      enableGodPower: false, // 是否启用上帝之力
-      switchServerVisible: false,
+
+      localMarks: {}, // 本地玩家备注（本地持久化）
+      gameRoles: {}, // 本局启用的身份配置
+      godPowerVisible: false, // 上帝之力弹窗
+      enableGodPower: false, // 是否开启上帝手动派身份
+      switchServerVisible: false, // 切换服务弹窗
     };
   },
+
   computed: {
+    /**
+     * 格式化计时文本 分:秒.厘秒
+     */
     timeStr() {
       let ms = this.elapsed;
       const minutes = Math.floor(ms / 6000)
@@ -511,17 +539,25 @@ export default {
       return `${minutes}:${seconds}.${centiseconds}`;
     },
   },
+
   mounted() {
-    this.API_BASE = this.getCurrentApiBase(); // 初始化 API_BASE
+    // 初始化服务地址、本地数据、配置、对局信息
+    this.API_BASE = this.getCurrentApiBase();
     this.loadLocal();
     this.loadLocalMarks();
     this.getRoleConfig();
     this.getGame();
   },
+
   beforeDestroy() {
+    // 组件销毁清除计时器，防止内存泄漏
     clearInterval(this.timer);
   },
+
   methods: {
+    /**
+     * 获取当前选中的服务接口地址
+     */
     getCurrentApiBase() {
       let savedKey =
         localStorage.getItem("werewolf_server") || API_SERVERS.default;
@@ -530,50 +566,71 @@ export default {
       }
       return API_SERVERS.list[savedKey].url;
     },
+
+    /**
+     * 切换服务后刷新页面生效
+     */
     onServerChange(api) {
       this.API_BASE = api;
       location.reload();
     },
+
+    /**
+     * 上帝保存分配后的玩家身份
+     */
     async handleGodSave(newPlayers) {
-      // 找到上帝
       const god = this.players.find((p) => p.role === this.GOD_NAME);
-      // 合并上帝 + 修改后的玩家
       this.gameData.players = [god, ...newPlayers];
       await this.saveGame();
       this.refreshAll();
       this.$message.success(`${this.GOD_NAME}之力已生效！`);
     },
-    // 加载本地备注
+
+    /**
+     * 读取本地存储的玩家备注
+     */
     loadLocalMarks() {
       const data = localStorage.getItem("localMarks");
       if (data) this.localMarks = JSON.parse(data);
     },
 
-    // 保存本地备注
+    /**
+     * 保存玩家备注到本地存储
+     */
     saveLocalMarks() {
       localStorage.setItem("localMarks", JSON.stringify(this.localMarks));
     },
-    // 标准加密级 UUID
+
+    /**
+     * 生成唯一UUID，用于区分玩家
+     */
     generateUUID() {
       return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
         (
           c ^
-          ((crypto.getRandomValues(new Uint8Array(1))[0] & 15) >> (c / 4))
+          (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))
         ).toString(16)
       );
     },
 
-    // 清空笔记
+    /**
+     * 清空个人游戏笔记
+     */
     clearNote() {
       this.localPlayer.note = "";
       this.saveLocal();
       this.$message.info("笔记已清空");
     },
-    // 保存笔记
+
+    /**
+     * 保存个人游戏笔记
+     */
     saveNote() {
       this.saveLocal();
       this.$message.success("笔记已保存");
     },
+
+    // ========== 计时功能 ==========
     start() {
       if (this.running) return;
       this.running = true;
@@ -590,7 +647,10 @@ export default {
       this.stop();
       this.elapsed = 0;
     },
-    // 上帝专用：一键把投票结果填充到广播框
+
+    /**
+     * 一键将投票结果填充到上帝广播输入框
+     */
     fillVoteToBroadcast() {
       let text = "今日投票结果：\n";
       for (let target in this.voteStat) {
@@ -604,7 +664,9 @@ export default {
       this.$message.success("已自动填充投票结果到广播输入框！");
     },
 
-    // 读取身份配置（独立BIN）
+    /**
+     * 获取全局身份配置
+     */
     async getRoleConfig() {
       try {
         const res = await fetch(`${this.API_BASE}/roleData`);
@@ -616,12 +678,13 @@ export default {
       }
     },
 
-    // 保存身份配置
+    /**
+     * 保存身份配置到服务端
+     */
     async saveGameSetting() {
       this.saveRoleLoading = true;
       const final = this.$refs.setting.getFinalList();
       try {
-        // 包成对象再PUT
         await fetch(`${this.API_BASE}/roleData`, {
           method: "PUT",
           headers: {
@@ -639,7 +702,9 @@ export default {
       this.roleSettingVisible = false;
     },
 
-    // 重建创建对局表单
+    /**
+     * 根据身份配置重建创建对局表单
+     */
     rebuildCreateForm() {
       const roles = {};
       this.roleConfigList.forEach((r) => {
@@ -647,6 +712,10 @@ export default {
       });
       this.createForm.roles = roles;
     },
+
+    /**
+     * 校验管理员密码弹窗
+     */
     async checkAdminPassword() {
       try {
         const { value } = await this.$prompt("请输入管理员密码", "提示", {
@@ -663,28 +732,44 @@ export default {
         return false;
       }
     },
+
+    /**
+     * 打开身份管理面板（需密码验证）
+     */
     async askGameSetting() {
       const pass = await this.checkAdminPassword();
       if (!pass) return;
       this.roleSettingVisible = true;
     },
 
+    /**
+     * 根据身份名称获取身份描述
+     */
     getRoleDesc(roleName) {
       const role = this.roleConfigList.find((item) => item.name === roleName);
       return role ? role.desc : "暂无描述";
     },
 
+    /**
+     * 开始编辑昵称
+     */
     editName() {
       this.originalName = this.localPlayer.name;
       this.tempName = this.localPlayer.name;
       this.editingName = true;
     },
 
+    /**
+     * 取消编辑昵称
+     */
     cancelEditName() {
       this.editingName = false;
       this.tempName = this.originalName;
     },
 
+    /**
+     * 通用请求封装
+     */
     async fetch(url, options = {}) {
       try {
         const res = await fetch(`${this.API_BASE}/roomData`, {
@@ -697,14 +782,20 @@ export default {
         return this.gameData || {};
       }
     },
+
+    /**
+     * 读取本地玩家信息
+     */
     loadLocal() {
       const p = localStorage.getItem("werewolf_player");
       if (p) {
         this.localPlayer = JSON.parse(p);
+        // 兼容旧数据，补充uuid
         if (!this.localPlayer.uuid) {
           this.localPlayer.uuid = this.generateUUID();
         }
       } else {
+        // 初始化本地玩家信息
         this.localPlayer = {
           uuid: this.generateUUID(),
           name: "",
@@ -716,9 +807,17 @@ export default {
       }
       this.saveLocal();
     },
+
+    /**
+     * 保存玩家信息到本地存储
+     */
     saveLocal() {
       localStorage.setItem("werewolf_player", JSON.stringify(this.localPlayer));
     },
+
+    /**
+     * 保存昵称
+     */
     saveName() {
       if (!this.tempName.trim()) return;
       this.localPlayer.name = this.tempName.trim();
@@ -726,10 +825,14 @@ export default {
       this.editingName = false;
       this.tempName = "";
     },
+
+    /**
+     * 获取对局最新数据
+     */
     async getGame() {
       this.refreshLoading = true;
 
-      // 7秒超时定时器
+      // 7秒请求超时判断
       const timeout = setTimeout(() => {
         this.$msgbox({
           title: "请求超时",
@@ -755,7 +858,7 @@ export default {
         this.gameRoles = this.gameData.roles || {};
         this.players = this.gameData.players || [];
 
-        // 排序：上帝 → 序号 → 旁观者
+        // 玩家排序：上帝优先 > 有序号玩家 > 旁观者
         this.players.sort((a, b) => {
           if (a.role === this.GOD_NAME) return -1;
           if (b.role === this.GOD_NAME) return 1;
@@ -769,25 +872,21 @@ export default {
 
         const beforeJoined = this.gameStatus.joined;
         this.gameStatus.exist = !!this.gameData.judge;
-
         const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
 
+        // 对局存在且自己在玩家列表中
         if (this.gameStatus.exist && me) {
-          // 房间存在 + 自己还在列表里 → 保持加入状态
           this.gameStatus.joined = true;
           this.localPlayer = { ...this.localPlayer, ...me };
           this.saveLocal();
         } else if (!this.gameStatus.exist) {
-          // 房间被上帝解散了
+          // 对局已被解散
           this.gameStatus.joined = false;
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
           this.saveLocal();
-
-          // ======================================
-          // 【修复】这里加上提示！
-          // ======================================
+          // 断线重连时提示对局结束
           if (beforeJoined) {
             this.$message.info(`${this.GOD_NAME}已结束对局`);
           }
@@ -802,12 +901,20 @@ export default {
 
       this.refreshLoading = false;
     },
+
+    /**
+     * 保存对局数据到服务端
+     */
     async saveGame() {
       await this.fetch("", {
         method: "PUT",
         body: JSON.stringify(this.gameData),
       });
     },
+
+    /**
+     * 加入现有对局
+     */
     async joinGame() {
       await this.getGame();
       if (!this.gameStatus.exist) {
@@ -815,7 +922,7 @@ export default {
         return;
       }
 
-      // 重名判断
+      // 名校验
       const nameExists = this.players.some(
         (i) => i.name === this.localPlayer.name
       );
@@ -824,13 +931,14 @@ export default {
         return;
       }
 
-      // UUID 去重
+      // 防止重复加入
       const hasMe = this.players.some((i) => i.uuid === this.localPlayer.uuid);
       if (hasMe) {
         this.gameStatus.joined = true;
         return;
       }
 
+      // 加入玩家列表
       this.players.push({
         uuid: this.localPlayer.uuid,
         name: this.localPlayer.name,
@@ -844,10 +952,16 @@ export default {
       this.$message.success("加入成功");
     },
 
+    /**
+     * 展开/收起创建对局面板
+     */
     createGame() {
       this.showCreatePanel = !this.showCreatePanel;
     },
 
+    /**
+     * 提交创建对局
+     */
     async doCreateGame() {
       const { roles, pwd } = this.createForm;
       if (!pwd?.trim()) {
@@ -859,6 +973,8 @@ export default {
         return;
       }
       this.createLoading = true;
+
+      // 统计选中身份与总人数
       const gameRoles = {};
       let total = 0;
       this.roleConfigList.forEach((item) => {
@@ -868,11 +984,14 @@ export default {
           total += cfg.count;
         }
       });
+
       if (total < 3) {
         this.createLoading = false;
         this.$message.warning("至少3人");
         return;
       }
+
+      // 初始化对局数据
       this.gameData = {
         judge: this.localPlayer.name,
         roles: gameRoles,
@@ -898,13 +1017,17 @@ export default {
       this.refreshAll();
     },
 
+    /**
+     * 玩家主动抽取身份牌
+     */
     async drawRole() {
       const g = this.gameData;
-
       let fullDeck = [];
+      // 生成身份牌堆
       Object.entries(g.roles).forEach(([name, cnt]) => {
         for (let i = 0; i < cnt; i++) fullDeck.push(name);
       });
+      // 剔除已被抽取的身份
       this.players.forEach((p) => {
         if (p.role && p.role !== this.GOD_NAME) {
           const idx = fullDeck.indexOf(p.role);
@@ -915,6 +1038,8 @@ export default {
         this.$message.error("发完了");
         return;
       }
+
+      // 分配序号 + 随机身份
       const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
       const usedSeqs = this.players.map((p) => p.seq).filter(Boolean);
       let seq = 1;
@@ -922,12 +1047,16 @@ export default {
       const rndIdx = Math.floor(Math.random() * fullDeck.length);
       me.role = fullDeck[rndIdx];
       me.seq = seq;
+
       this.localPlayer = { ...this.localPlayer, ...me };
       this.saveLocal();
       await this.saveGame();
       this.$message.success("抽牌成功");
     },
 
+    /**
+     * 上帝标记/取消玩家死亡状态
+     */
     async toggleDead(seq) {
       const p = this.players.find((i) => seq === i.seq);
       if (p) p.dead = !p.dead;
@@ -935,6 +1064,9 @@ export default {
       this.$message.success("已切换");
     },
 
+    /**
+     * 上帝发布全局广播
+     */
     async sendMsg() {
       if (!this.judgeMsg.trim()) {
         this.$message.warning("内容不能为空");
@@ -947,7 +1079,9 @@ export default {
       this.sendMsgLoading = false;
     },
 
-    // 退出对局
+    /**
+     * 玩家退出对局
+     */
     async quitGame() {
       this.$confirm(
         "退出对局后会失去身份牌且移出玩家列表，该操作可能会对本局游戏造成影响，需要更高权限确认（还没有身份的玩家则不需要）",
@@ -962,16 +1096,20 @@ export default {
         }
       )
         .then(async () => {
+          // 已有身份需要密码验证
           if (this.localPlayer?.role) {
             const pass = await this.checkAdminPassword();
             if (!pass) return;
           }
           this.quitGameLoading = true;
+          // 从玩家列表移除自己
           this.players = this.players.filter(
             (p) => p.uuid !== this.localPlayer.uuid
           );
           this.gameData.players = this.players;
           await this.saveGame();
+
+          // 清空本地对局信息
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
@@ -986,6 +1124,9 @@ export default {
         .catch(() => {});
     },
 
+    /**
+     * 上帝结束整局游戏
+     */
     async endGame() {
       this.$confirm("结束本局后，其他所有成员也将自动退出, 是否继续?", "提示", {
         confirmButtonText: "确定",
@@ -997,6 +1138,7 @@ export default {
       })
         .then(async () => {
           this.endLoading = true;
+          // 清空对局数据
           this.gameData = {
             judge: "",
             roles: {},
@@ -1007,6 +1149,7 @@ export default {
           };
           await this.saveGame();
           this.gameStatus = { exist: false, joined: false };
+          // 重置本地玩家对局信息
           this.localPlayer = {
             ...this.localPlayer,
             role: "",
@@ -1022,11 +1165,16 @@ export default {
         .catch(() => {});
     },
 
+    /**
+     * 手动刷新对局数据
+     */
     refreshAll() {
       this.getGame();
     },
 
-    // 投票统计
+    /**
+     * 重新计算投票统计
+     */
     refreshVoteStat() {
       const votes = this.gameData.votes || {};
       const abandons = this.gameData.abandons || [];
@@ -1041,6 +1189,9 @@ export default {
       this.abandonList = abandons.filter((num) => num != 0).map(Number);
     },
 
+    /**
+     * 执行投票
+     */
     async doVote() {
       if (!this.voteTarget) {
         this.$message.warning("请输入投票序号");
@@ -1050,10 +1201,10 @@ export default {
       const seq = this.localPlayer.seq;
       if (seq === 0) return;
 
+      // 记录投票，移除弃票状态
       this.gameData.votes = this.gameData.votes || {};
       this.gameData.abandons = this.gameData.abandons || [];
       this.gameData.votes[seq] = this.voteTarget;
-
       const idx = this.gameData.abandons.indexOf(seq);
       if (idx >= 0) this.gameData.abandons.splice(idx, 1);
 
@@ -1062,15 +1213,18 @@ export default {
       this.$message.success("投票成功：投给 " + this.voteTarget + " 号");
     },
 
+    /**
+     * 执行弃票
+     */
     async doAbandon() {
       await this.getGame();
       const seq = this.localPlayer.seq;
       if (seq === 0) return;
 
+      // 记录弃票，移除投票状态
       this.gameData.votes = this.gameData.votes || {};
       this.gameData.abandons = this.gameData.abandons || [];
       delete this.gameData.votes[seq];
-
       if (!this.gameData.abandons.includes(seq)) {
         this.gameData.abandons.push(seq);
       }
