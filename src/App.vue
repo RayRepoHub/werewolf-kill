@@ -37,18 +37,11 @@
         </el-button>
       </div>
 
-      <div style="display: flex; justify-content: center; margin-top: 10px">
+      <div class="game-action-buttons">
         <el-button type="success" @click="createGame"> 创建对局 </el-button>
-        <el-button type="warning" @click="joinGame" style="margin-left: 10px">
-          加入对局
-        </el-button>
+        <el-button type="warning" @click="joinGame"> 加入对局 </el-button>
         <el-button type="info" @click="askGameSetting"> 身份管理 </el-button>
-        <el-button
-          type="primary"
-          plain
-          style="margin-left: 10px"
-          @click="switchServerVisible = true"
-        >
+        <el-button type="primary" @click="switchServerVisible = true">
           切换服务
         </el-button>
       </div>
@@ -1174,6 +1167,19 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+}
+.game-action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-width: 420px;
+  margin: 10px auto 0;
+}
+.game-action-buttons .el-button {
+  width: 100%;
+  height: 60px;
+  font-size: 18px;
+  margin-left: 0 !important; /* 覆盖Element自带的margin-left */
 }
 .text-center {
   text-align: center;
