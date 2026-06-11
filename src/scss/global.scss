@@ -77,3 +77,12 @@
     overflow-y: scroll;
     padding: 0 20px;
 }
+
+/**
+ * el-message-box
+ * 消息弹窗外层容器样式
+ */
+.msg-box {
+    width: 100%;
+    max-width: 420px;
+}

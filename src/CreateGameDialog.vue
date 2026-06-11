@@ -133,7 +133,7 @@ export default {
       this.createForm.roles = roles;
     },
 
-    // 点击创建对局，触发父组件事件
+    // 创建对局
     async handleCreate() {
       const { roles, pwd } = this.createForm;
       if (!pwd?.trim()) {
@@ -145,15 +145,16 @@ export default {
         return;
       }
 
-      this.createLoading = true;
-      // 统计选中身份 & 总人数
+      // 统计选中身份与总人数
       const gameRoles = {};
       let total = 0;
+      const roleHtmlList = [];
       this.roleConfigList.forEach((item) => {
         const cfg = roles[item.name];
         if (cfg?.enabled) {
           gameRoles[item.name] = cfg.count;
           total += cfg.count;
+          roleHtmlList.push(`<div>· ${item.name}：${cfg.count}人</div>`);
         }
       });
 
@@ -163,13 +164,47 @@ export default {
         return;
       }
 
-      // 抛出事件，把创建参数传给父组件
+      // 派牌规则文案
+      const modeText = this.enableGodPower
+        ? `· 身份派发方式：由${this.GOD_NAME}指派身份`
+        : "· 身份派发方式：玩家自行抽取身份牌";
+
+      // HTML 排版内容
+      const htmlContent = `
+    <div style="line-height: 1.8; text-align: left;">
+      <div>即将创建对局，当前配置如下：</div>
+      <br/>
+      <div><strong>【身份列表】</strong></div>
+      ${roleHtmlList.join("")}
+      <div>· 总人数：${total}人</div>
+      <br/>
+      <div><strong>【派牌规则】</strong></div>
+      <div>${modeText}</div>
+      <br/>
+      <div>确认创建该对局吗？</div>
+    </div>
+  `;
+
+      try {
+        await this.$confirm(htmlContent, "创建确认", {
+          confirmButtonText: "确认创建",
+          cancelButtonText: "取消",
+          type: "warning",
+          closeOnClickModal: false,
+          dangerouslyUseHTMLString: true,
+          center: true,
+          showClose: false,
+        });
+      } catch (err) {
+        return;
+      }
+
+      this.createLoading = true;
       this.$emit("create", {
         gameRoles,
         enableGodPower: this.enableGodPower,
         createForm: this.createForm,
       });
-      // 创建成功后关闭弹窗
       this.visibleLocal = false;
     },
   },

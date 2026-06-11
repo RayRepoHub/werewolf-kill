@@ -657,7 +657,7 @@ export default {
           closeOnClickModal: false,
           inputPattern: /\S/,
           inputErrorMessage: "密码不能为空",
-          customClass: "admin-pwd-prompt",
+          customClass: "msg-box",
           center: true,
           showClose: false,
         });
@@ -1002,6 +1002,7 @@ export default {
           center: true,
           showClose: false,
           closeOnClickModal: false,
+          customClass: "msg-box",
         }
       )
         .then(async () => {
@@ -1044,6 +1045,7 @@ export default {
         center: true,
         showClose: false,
         closeOnClickModal: false,
+        customClass: "msg-box",
       })
         .then(async () => {
           this.endLoading = true;
@@ -1147,12 +1149,6 @@ export default {
 };
 </script>
 
-<style>
-.admin-pwd-prompt {
-  width: 100%;
-  max-width: 420px;
-}
-</style>
 <style scoped>
 .timer-box {
   font-family: "Courier New", monospace;
