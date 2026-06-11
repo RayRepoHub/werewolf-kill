@@ -8,53 +8,53 @@
     class="full-screen-dialog"
   >
     <el-form label-width="100px">
-      <div
-        v-for="role in roleConfigList"
-        v-show="role.enabled"
-        :key="role.name"
-        style="margin-bottom: 20px"
-      >
+      <!-- 第一步：选择身份 & 设置数量 -->
+      <div class="form-section">
+        <h3 class="section-title">1. 选择对局身份、设置对应数量</h3>
         <div
-          class="w-full flex-between"
-          style="height: 30px; margin-bottom: 4px"
+          v-for="role in roleConfigList"
+          v-show="role.enabled"
+          :key="role.name"
+          class="role-item"
         >
-          <el-checkbox v-model="createForm.roles[role.name].enabled">
-            {{ role.name }}
-          </el-checkbox>
-          <el-input-number
-            v-if="createForm.roles[role.name].enabled"
-            v-model="createForm.roles[role.name].count"
-            :min="1"
-            size="mini"
-          />
+          <div class="w-full flex-between role-row">
+            <el-checkbox v-model="createForm.roles[role.name].enabled">
+              {{ role.name }}
+            </el-checkbox>
+            <el-input-number
+              v-if="createForm.roles[role.name].enabled"
+              v-model="createForm.roles[role.name].count"
+              :min="1"
+              size="mini"
+            />
+          </div>
+          <div class="role-desc">（{{ role.desc || "暂无描述" }}）</div>
         </div>
-        <div style="font-size: 14px">（{{ role.desc || "暂无描述" }}）</div>
       </div>
-      <div
-        style="
-          background: #f8f9fa;
-          padding: 10px 14px;
-          border-radius: 6px;
-          margin-bottom: 20px;
-          border: 1px solid #e9ecef;
-        "
-      >
-        <el-checkbox
-          v-model="enableGodPower"
-          style="font-size: 14px; font-weight: 500"
-        >
-          是否由
-          <span style="color: #1890ff; font-weight: bold">{{ GOD_NAME }}</span>
-          指派身份
-        </el-checkbox>
+
+      <!-- 第二步：游戏附加设定 -->
+      <div class="form-section">
+        <h3 class="section-title">2. 游戏附加设定</h3>
+        <div class="setting-box">
+          <el-checkbox v-model="enableGodPower" class="setting-checkbox">
+            是否由
+            <span class="highlight-text">{{ GOD_NAME }}</span>
+            指派身份
+          </el-checkbox>
+        </div>
       </div>
-      <el-form-item label="管理员密码" :required="true">
-        <el-input
-          v-model="createForm.pwd"
-          show-password
-          placeholder="请输入管理员密码"
-        />
-      </el-form-item>
+
+      <!-- 第三步：管理员密码验证 -->
+      <div class="form-section">
+        <h3 class="section-title">3. 管理员权限验证</h3>
+        <el-form-item label="管理员密码" :required="true">
+          <el-input
+            v-model="createForm.pwd"
+            show-password
+            placeholder="请输入管理员密码"
+          />
+        </el-form-item>
+      </div>
     </el-form>
 
     <span slot="footer" class="dialog-footer">
@@ -175,3 +175,51 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* 模块整体间距 */
+.form-section {
+  margin-bottom: 24px;
+}
+
+/* 步骤标题，引导层级 */
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0 0 12px 0;
+  padding-left: 4px;
+  border-left: 4px solid #1890ff;
+}
+
+/* 身份选项行 */
+.role-item {
+  margin-bottom: 20px;
+}
+.role-row {
+  height: 30px;
+  margin-bottom: 4px;
+}
+.role-desc {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 游戏设定卡片 */
+.setting-box {
+  background: #f8f9fa;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+.setting-checkbox {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 高亮文字（上帝名称） */
+.highlight-text {
+  color: #1890ff;
+  font-weight: bold;
+}
+</style>
