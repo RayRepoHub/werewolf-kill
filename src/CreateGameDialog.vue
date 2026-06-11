@@ -5,6 +5,7 @@
     :fullscreen="true"
     :show-close="false"
     @close="handleClose"
+    class="full-screen-dialog"
   >
     <el-form label-width="100px">
       <div

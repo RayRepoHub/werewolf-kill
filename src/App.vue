@@ -353,7 +353,8 @@
       title="身份管理"
       :visible.sync="roleSettingVisible"
       :fullscreen="true"
-      class="role-set-dialog"
+      :show-close="false"
+      class="full-screen-dialog"
     >
       <GameSetting ref="setting" :initial-roles="roleConfigList" />
       <span slot="footer" class="dialog-footer">
@@ -1161,16 +1162,6 @@ export default {
   margin: 0 auto 16px;
   letter-spacing: 1px;
   text-align: center;
-}
-::v-deep .role-set-dialog .el-dialog.is-fullscreen {
-  height: 100vh !important;
-  display: flex;
-  flex-direction: column;
-}
-::v-deep .role-set-dialog .el-dialog__body {
-  height: calc(100% - 200px);
-  overflow-y: scroll;
-  padding: 0 20px;
 }
 .werewolf-game-container {
   max-width: 800px;
