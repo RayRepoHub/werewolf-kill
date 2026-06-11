@@ -808,21 +808,29 @@ export default {
         this.gameStatus.exist = !!this.gameData.judge;
         const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
 
-        // 对局存在且自己在玩家列表中
+        // 对局存在 + 自己在玩家列表：正常保留对局状态
         if (this.gameStatus.exist && me) {
           this.gameStatus.joined = true;
           this.localPlayer = { ...this.localPlayer, ...me };
           this.saveLocal();
-        } else if (!this.gameStatus.exist) {
-          // 对局已被解散
+        } else {
+          // 对局已解散 / 对局存在但自己被移出列表：自动退出对局
           this.gameStatus.joined = false;
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
           this.saveLocal();
-          // 断线重连时提示对局结束
+
+          // 之前处于已加入状态，给出对应提示
           if (beforeJoined) {
-            this.$message.info(`${this.GOD_NAME}已结束对局`);
+            if (!this.gameStatus.exist) {
+              this.$message.info(`${this.GOD_NAME}已结束对局`);
+            } else {
+              this.$message.info("你已被移出对局");
+              // 清空本地玩家备注
+              this.localMarks = {};
+              localStorage.removeItem("localMarks");
+            }
           }
         }
 
