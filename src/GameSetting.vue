@@ -1,11 +1,19 @@
 <template>
   <el-container style="height: 100%">
-    <el-header style="display: flex; justify-content: end; padding: 0">
-      <el-button type="primary" @click="openDialog()" style="height: 40px">
+    <el-header
+      height="60px"
+      style="
+        padding: 0;
+        display: flex;
+        justify-content: flex-end;
+        align-items: start;
+      "
+    >
+      <el-button size="small" type="primary" @click="openDialog()">
         新增身份
       </el-button>
     </el-header>
-    <el-main style="padding: 0; height: calc(100% - 40px)">
+    <el-main style="padding: 0; height: calc(100% - 60px)">
       <div v-for="(role, index) in roleList" :key="index" class="role-info">
         <div style="margin-bottom: 20px">
           <div>
@@ -36,6 +44,7 @@
       :title="dialogTitle"
       :visible.sync="editDialog"
       :modal-append-to-body="false"
+      :show-close="false"
       :fullscreen="true"
       append-to-body
     >

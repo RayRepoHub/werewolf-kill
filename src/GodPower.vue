@@ -9,9 +9,9 @@
     :close-on-click-modal="false"
     class="full-screen-dialog"
   >
-    <el-header class="tool-bar flex-end" height="28px">
+    <el-header class="tool-bar flex-end" height="60px">
       <el-dropdown @command="handleRandom" trigger="click">
-        <el-button type="primary" size="mini">
+        <el-button type="primary" size="small">
           随机分配 <i class="el-icon-arrow-down el-icon--right"></i>
         </el-button>
         <el-dropdown-menu slot="dropdown">
@@ -25,7 +25,7 @@
       </el-dropdown>
       <el-button
         type="danger"
-        size="mini"
+        size="small"
         icon="el-icon-delete"
         @click="clearAllRoles"
       >
@@ -33,7 +33,7 @@
       </el-button>
     </el-header>
 
-    <el-main style="padding: 0; height: calc(100% - 40px)">
+    <el-main style="padding: 0; height: calc(100% - 60px)">
       <div v-for="(p, idx) in playerList" :key="idx" class="player-item">
         <div class="player-name" :title="p.name">{{ p.name }}</div>
         <el-input-number
@@ -215,7 +215,6 @@ export default {
 <style scoped>
 .tool-bar {
   gap: 8px;
-  margin-bottom: 12px;
   padding: 0;
 }
 .player-item {
