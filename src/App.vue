@@ -656,6 +656,9 @@ export default {
           closeOnClickModal: false,
           inputPattern: /\S/,
           inputErrorMessage: "密码不能为空",
+          customClass: "admin-pwd-prompt",
+          center: true,
+          showClose: false,
         });
         return value === this.ADMIN_PASSWORD;
       } catch {
@@ -1143,6 +1146,12 @@ export default {
 };
 </script>
 
+<style>
+.admin-pwd-prompt {
+  width: 100%;
+  max-width: 420px;
+}
+</style>
 <style scoped>
 .timer-box {
   font-family: "Courier New", monospace;
