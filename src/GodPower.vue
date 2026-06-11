@@ -7,11 +7,9 @@
     :show-close="false"
     append-to-body
     :close-on-click-modal="false"
-    class="god-power-dialog"
+    class="full-screen-dialog"
   >
-    <!-- 工具栏 -->
-    <div class="tool-bar">
-      <!-- 随机分配下拉菜单（已修复手机端BUG） -->
+    <el-header class="tool-bar flex-end" height="28px">
       <el-dropdown @command="handleRandom" trigger="click">
         <el-button type="primary" size="mini">
           随机分配 <i class="el-icon-arrow-down el-icon--right"></i>
@@ -25,8 +23,6 @@
           </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
-
-      <!-- 一键清空身份 -->
       <el-button
         type="danger"
         size="mini"
@@ -35,10 +31,9 @@
       >
         清空数据
       </el-button>
-    </div>
+    </el-header>
 
-    <!-- 玩家列表 - 响应式布局 -->
-    <div class="player-list">
+    <el-main style="padding: 0; height: calc(100% - 40px)">
       <div v-for="(p, idx) in playerList" :key="idx" class="player-item">
         <div class="player-name" :title="p.name">{{ p.name }}</div>
         <el-input-number
@@ -63,15 +58,13 @@
           />
         </el-select>
       </div>
-    </div>
+    </el-main>
 
     <template slot="footer">
-      <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="save">
-          保存修改
-        </el-button>
-      </div>
+      <el-button @click="handleClose">取消</el-button>
+      <el-button type="primary" :loading="loading" @click="save">
+        保存修改
+      </el-button>
     </template>
   </el-dialog>
 </template>
@@ -220,18 +213,10 @@ export default {
 </script>
 
 <style scoped>
-:deep(.god-power-dialog) {
-  max-width: 700px;
-}
 .tool-bar {
-  display: flex;
-  justify-content: flex-end;
   gap: 8px;
   margin-bottom: 12px;
-}
-.player-list {
-  max-height: 60vh;
-  overflow-y: auto;
+  padding: 0;
 }
 .player-item {
   display: flex;
@@ -254,10 +239,5 @@ export default {
 .role-select {
   flex: 2;
   min-width: 140px;
-}
-.dialog-footer {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
 }
 </style>
