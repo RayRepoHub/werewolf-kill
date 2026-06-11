@@ -44,14 +44,21 @@
         </div>
       </div>
 
-      <!-- 第三步：管理员密码验证 -->
+      <!-- 第三步：密码设置 -->
       <div class="form-section">
-        <h3 class="section-title">3. 管理员权限验证</h3>
-        <el-form-item label="管理员密码" :required="true">
+        <h3 class="section-title">3. 密码设置</h3>
+        <el-form-item label="管理员密码" required>
           <el-input
-            v-model="createForm.pwd"
+            v-model="createForm.adminPwd"
             show-password
             placeholder="请输入管理员密码"
+          />
+        </el-form-item>
+        <el-form-item label="房间密码">
+          <el-input
+            v-model="createForm.roomPwd"
+            show-password
+            placeholder="选填，设置后加入对局需要验证密码"
           />
         </el-form-item>
       </div>
@@ -91,14 +98,15 @@ export default {
       ADMIN_PASSWORD,
       createLoading: false,
       enableGodPower: false,
+      // 拆分管理员密码 + 房间密码
       createForm: {
         roles: {},
-        pwd: "",
+        adminPwd: "",
+        roomPwd: "",
       },
     };
   },
   computed: {
-    // 用 computed 中转 visible，避免直接修改 prop
     visibleLocal: {
       get() {
         return this.visible;
@@ -109,22 +117,20 @@ export default {
     },
   },
   watch: {
-    // 弹窗打开时重置表单、重建角色配置
     visible(val) {
       if (val) {
         this.rebuildCreateForm();
-        this.createForm.pwd = "";
+        this.createForm.adminPwd = "";
+        this.createForm.roomPwd = "";
         this.enableGodPower = false;
       }
     },
   },
   methods: {
-    // 关闭弹窗回调
     handleClose() {
       this.createLoading = false;
     },
 
-    // 根据角色配置重建表单结构
     rebuildCreateForm() {
       const roles = {};
       this.roleConfigList.forEach((r) => {
@@ -133,19 +139,19 @@ export default {
       this.createForm.roles = roles;
     },
 
-    // 创建对局
     async handleCreate() {
-      const { roles, pwd } = this.createForm;
-      if (!pwd?.trim()) {
+      const { roles, adminPwd, roomPwd } = this.createForm;
+      // 校验管理员密码
+      if (!adminPwd?.trim()) {
         this.$message.error("请输入管理员密码！");
         return;
       }
-      if (pwd !== this.ADMIN_PASSWORD) {
-        this.$message.error("密码错误！");
+      if (adminPwd !== this.ADMIN_PASSWORD) {
+        this.$message.error("管理员密码错误！");
         return;
       }
 
-      // 统计选中身份与总人数
+      // 统计身份与人数
       const gameRoles = {};
       let total = 0;
       const roleHtmlList = [];
@@ -164,12 +170,10 @@ export default {
         return;
       }
 
-      // 派牌规则文案
       const modeText = this.enableGodPower
         ? `· 身份派发方式：由${this.GOD_NAME}指派身份`
         : "· 身份派发方式：玩家自行抽取身份牌";
 
-      // HTML 排版内容
       const htmlContent = `
     <div style="line-height: 1.8; text-align: left;">
       <div>即将创建对局，当前配置如下：</div>
@@ -200,10 +204,11 @@ export default {
       }
 
       this.createLoading = true;
+      // 把房间密码一并传给父组件
       this.$emit("create", {
         gameRoles,
         enableGodPower: this.enableGodPower,
-        createForm: this.createForm,
+        roomPwd: roomPwd.trim(),
       });
       this.visibleLocal = false;
     },
@@ -212,12 +217,10 @@ export default {
 </script>
 
 <style scoped>
-/* 模块整体间距 */
 .form-section {
   margin-bottom: 24px;
 }
 
-/* 步骤标题，引导层级 */
 .section-title {
   font-size: 16px;
   font-weight: 600;
@@ -227,7 +230,6 @@ export default {
   border-left: 4px solid #1890ff;
 }
 
-/* 身份选项行 */
 .role-item {
   margin-bottom: 20px;
 }
@@ -240,7 +242,6 @@ export default {
   color: #666;
 }
 
-/* 游戏设定卡片 */
 .setting-box {
   background: #f8f9fa;
   padding: 10px 14px;
@@ -252,7 +253,6 @@ export default {
   font-weight: 500;
 }
 
-/* 高亮文字（上帝名称） */
 .highlight-text {
   color: #1890ff;
   font-weight: bold;

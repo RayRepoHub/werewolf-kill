@@ -880,7 +880,31 @@ export default {
         return;
       }
 
-      // 加入玩家列表
+      // ========== 房间密码校验逻辑 ==========
+      const roomPwd = this.gameData.roomPwd || "";
+      if (roomPwd) {
+        // 有房间密码，弹出输入框校验
+        try {
+          const { value } = await this.$prompt("请输入房间密码", "加入对局", {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            inputType: "password",
+            closeOnClickModal: false,
+            customClass: "msg-box",
+            center: true,
+            showClose: false,
+          });
+          if (value !== roomPwd) {
+            this.$message.error("房间密码错误，无法加入");
+            return;
+          }
+        } catch {
+          // 用户点取消，直接终止
+          return;
+        }
+      }
+
+      // 密码校验通过 / 无房间密码，正常加入
       this.players.push({
         uuid: this.localPlayer.uuid,
         name: this.localPlayer.name,
@@ -905,14 +929,15 @@ export default {
      * 接收子组件参数，执行创建对局逻辑
      */
     async onCreateGame(params) {
-      const { gameRoles, enableGodPower } = params;
+      const { gameRoles, enableGodPower, roomPwd } = params;
       this.createLoading = true;
 
-      // 初始化对局数据
+      // 初始化对局数据，存入房间密码
       this.gameData = {
         judge: this.localPlayer.name,
         roles: gameRoles,
         enableGodPower: enableGodPower,
+        roomPwd: roomPwd || "", // 房间密码，空代表无密码
         players: [
           {
             uuid: this.localPlayer.uuid,
