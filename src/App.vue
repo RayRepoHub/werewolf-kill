@@ -16,7 +16,13 @@
       <el-button type="primary" @click="saveName">
         {{ editingName ? "保存" : "确认进入" }}
       </el-button>
-      <el-button v-if="editingName" @click="cancelEditName"> 取消 </el-button>
+      <el-button
+        v-if="editingName"
+        @click="cancelEditName"
+        style="margin-left: 0"
+      >
+        取消
+      </el-button>
     </div>
 
     <!-- 已设置昵称，但未加入对局：功能操作区 -->
@@ -24,7 +30,7 @@
       v-else-if="localPlayer.name && !gameStatus.joined"
       style="text-align: center; margin-bottom: 16px"
     >
-      <div style="font-size: 16px; margin-bottom: 10px">
+      <div style="font-size: 16px; margin-bottom: 20px">
         你好，<span style="color: #1890ff; font-weight: bold">{{
           localPlayer.name
         }}</span>
