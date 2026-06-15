@@ -34,12 +34,8 @@
         你好，<span style="color: #1890ff; font-weight: bold">{{
           localPlayer.name
         }}</span>
-        <el-button
-          type="text"
-          icon="el-icon-edit"
-          @click="editName"
-          style="margin-left: 4px"
-        >
+        <el-button type="text" @click="editName" style="margin-left: 4px">
+          <svg-icon icon-class="edit" />
         </el-button>
       </div>
 
@@ -93,7 +89,7 @@
         <!-- 我的身份面板 -->
         <el-collapse-item name="roleCard">
           <template slot="title">
-            我的身份<i class="el-icon-s-custom" style="margin-left: 4px" />
+            我的身份<svg-icon icon-class="cards" class="panel-title-icon" />
           </template>
           <div v-if="isJudge" class="font-bold">{{ GOD_NAME }}</div>
           <div class="font-bold" v-else-if="localPlayer.role">
@@ -132,7 +128,7 @@
         <!-- 玩家列表面板 -->
         <el-collapse-item name="playerList">
           <template slot="title">
-            玩家列表<i class="el-icon-s-order" style="margin-left: 4px" />
+            玩家列表<svg-icon icon-class="list" class="panel-title-icon" />
           </template>
           <div
             v-for="p in players"
@@ -195,7 +191,7 @@
         <!-- 游戏笔记面板 -->
         <el-collapse-item name="gameNotes">
           <template slot="title">
-            游戏笔记<i class="el-icon-info" style="margin-left: 4px" />
+            游戏笔记<svg-icon icon-class="notebook" class="panel-title-icon" />
           </template>
           <el-input
             v-model="localPlayer.note"
@@ -221,7 +217,7 @@
         <!-- 进程计时面板 -->
         <el-collapse-item name="processTimer">
           <template slot="title">
-            进程计时<i class="el-icon-s-opportunity" style="margin-left: 4px" />
+            进程计时<svg-icon icon-class="timer" class="panel-title-icon" />
           </template>
           <div style="padding: 15px; text-align: center">
             <div class="timer-box">{{ timeStr }}</div>
@@ -250,7 +246,7 @@
         <!-- 投票信息面板 -->
         <el-collapse-item name="voteInfo">
           <template slot="title">
-            投票信息<i class="el-icon-s-ticket" style="margin-left: 4px" />
+            投票信息<svg-icon icon-class="ticket" class="panel-title-icon" />
           </template>
           <div v-if="localPlayer.dead">你已经死亡，无法参与投票</div>
           <div v-else-if="isJudge" style="line-height: 1.8">
@@ -303,9 +299,9 @@
         <!-- 上帝广播面板 -->
         <el-collapse-item name="godBroadcast">
           <template slot="title">
-            {{ GOD_NAME }}广播<i
-              class="el-icon-message-solid"
-              style="margin-left: 4px"
+            {{ GOD_NAME }}广播<svg-icon
+              icon-class="camera"
+              class="panel-title-icon"
             />
           </template>
           <div v-if="isJudge" class="mb-2">
@@ -1189,6 +1185,9 @@ export default {
 </script>
 
 <style scoped>
+.panel-title-icon {
+  margin-left: 4px;
+}
 .timer-box {
   font-family: "Courier New", monospace;
   font-size: 32px;
