@@ -34,7 +34,7 @@
         你好，<span style="color: #1890ff; font-weight: bold">{{
           localPlayer.name
         }}</span>
-        <el-button type="text" @click="editName" style="margin-left: 4px">
+        <el-button type="text" @click="editName" style="margin-left: 8px">
           <svg-icon icon-class="edit" />
         </el-button>
       </div>
@@ -42,7 +42,9 @@
       <div class="game-action-buttons">
         <el-button type="success" @click="createGame"> 创建对局 </el-button>
         <el-button type="warning" @click="joinGame"> 加入对局 </el-button>
-        <el-button type="info" @click="askGameSetting"> 身份管理 </el-button>
+        <el-button class="role-btn" @click="askGameSetting">
+          身份管理
+        </el-button>
         <el-button type="primary" @click="switchServerVisible = true">
           切换服务
         </el-button>
@@ -58,7 +60,7 @@
         v-if="isJudge"
         type="primary"
         class="mb-3 ml-2"
-        @click="godPowerVisible = true"
+        @click="openGodPowerPanel"
       >
         {{ GOD_NAME }}之力
       </el-button>
@@ -488,6 +490,16 @@ export default {
   },
 
   methods: {
+    async openGodPowerPanel() {
+      // 过滤掉上帝自己，判断是否存在其他玩家
+      const otherPlayers = this.players.filter((p) => p.role !== this.GOD_NAME);
+      if (otherPlayers.length === 0) {
+        this.$message.warning("当前暂无其他玩家，无法分配身份");
+        return;
+      }
+      // 有其他玩家才打开弹窗
+      this.godPowerVisible = true;
+    },
     /**
      * 获取当前选中的服务接口地址
      */
@@ -1210,10 +1222,17 @@ export default {
   margin: 10px auto 0;
 }
 .game-action-buttons .el-button {
+  color: #fff;
   width: 100%;
   height: 60px;
   font-size: 18px;
   margin-left: 0 !important; /* 覆盖Element自带的margin-left */
+}
+.game-action-buttons {
+  .role-btn {
+    background: #9277e3;
+    border-color: #9277e3;
+  }
 }
 .text-center {
   text-align: center;
