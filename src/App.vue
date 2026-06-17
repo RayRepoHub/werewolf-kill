@@ -174,6 +174,16 @@
               {{ p.dead ? "设为存活" : "标记死亡" }}
             </el-button>
           </div>
+          <el-button
+            v-if="isJudge"
+            type="success"
+            size="mini"
+            icon="el-icon-copy-document"
+            @click="fillPlayerListToBroadcast"
+            style="margin-top: 8px"
+          >
+            一键填充玩家列表到广播
+          </el-button>
         </el-collapse-item>
 
         <!-- 游戏笔记面板 -->
@@ -479,6 +489,25 @@ export default {
   },
 
   methods: {
+    /**
+     * 一键将完整玩家列表填充到上帝广播输入框
+     */
+    fillPlayerListToBroadcast() {
+      let text = "当前对局玩家列表：\n";
+      this.players.forEach((p) => {
+        let line = "";
+        if (p.role === this.GOD_NAME) {
+          line = `上帝 - ${p.name}`;
+        } else if (p.seq) {
+          line = `${p.seq}号 ${p.name}(${p.role})${p.dead ? " [死亡]" : ""}`;
+        } else {
+          line = `${p.name} (旁观者)`;
+        }
+        text += line + "\n";
+      });
+      this.judgeMsg = text;
+      this.$message.success("已自动填充玩家列表到广播输入框！");
+    },
     // 弹出新公告确认弹窗
     showNewMsgConfirm(msg) {
       if (
