@@ -54,12 +54,7 @@
     <!-- 已加入对局：游戏主面板 -->
     <div v-else-if="gameStatus.joined">
       <el-button type="info" @click="refreshAll"> 刷新信息 </el-button>
-      <el-button
-        v-if="isJudge"
-        type="primary"
-        class="mb-3 ml-2"
-        @click="openGodPowerPanel"
-      >
+      <el-button v-if="isJudge" type="primary" @click="openGodPowerPanel">
         {{ GOD_NAME }}之力
       </el-button>
 
@@ -67,7 +62,6 @@
       <el-button
         type="warning"
         @click="quitGame"
-        class="ml-2 mb-3"
         v-if="!isJudge"
         :loading="quitGameLoading"
       >
@@ -79,7 +73,6 @@
         type="danger"
         @click="endGame"
         v-if="isJudge"
-        class="ml-2"
         :loading="endLoading"
       >
         结束本局
@@ -109,7 +102,6 @@
           </div>
           <div
             v-if="!isJudge && !localPlayer.role && gameData.enableGodPower"
-            class="mt-3"
             style="color: #1890ff; font-size: 15px"
           >
             请静待{{ GOD_NAME }}派发身份
@@ -133,7 +125,7 @@
           <div
             v-for="p in players"
             :key="p.seq || p.name"
-            class="py-2 border-bottom"
+            class="border-bottom"
           >
             <span :class="{ dead: p.dead }">
               <template v-if="p.seq && p.role">
@@ -166,20 +158,16 @@
                 </span>
               </template>
             </span>
-            <span
-              v-if="(p.role && isJudge) || p.role === GOD_NAME"
-              class="ml-2 text-muted"
-            >
+            <span v-if="(p.role && isJudge) || p.role === GOD_NAME">
               {{ `(${p.role})` }}
             </span>
-            <span v-else-if="!p.role" class="ml-2 text-muted"> (旁观者) </span>
+            <span v-else-if="!p.role"> (旁观者) </span>
 
             <!-- 上帝标记玩家生死 -->
             <el-button
               v-if="isJudge && p.seq"
               type="text"
               :class="p.dead ? 'text-green' : 'text-red'"
-              class="ml-2"
               @click="toggleDead(p.seq)"
               style="margin-left: 10px"
             >
@@ -304,7 +292,7 @@
               class="panel-title-icon"
             />
           </template>
-          <div v-if="isJudge" class="mb-2">
+          <div v-if="isJudge">
             <el-input
               v-model="judgeMsg"
               type="textarea"
@@ -1275,11 +1263,9 @@ export default {
   font-size: 18px;
   margin-left: 0 !important; /* 覆盖Element自带的margin-left */
 }
-.game-action-buttons {
-  .role-btn {
-    background: #9277e3;
-    border-color: #9277e3;
-  }
+.game-action-buttons .role-btn {
+  background: #9277e3;
+  border-color: #9277e3;
 }
 .text-center {
   text-align: center;
@@ -1300,12 +1286,5 @@ export default {
 }
 .text-green {
   color: green;
-}
-.bg-warning {
-  background: #fff7e6;
-  border: 1px solid #ffc107;
-}
-.rounded {
-  border-radius: 4px;
 }
 </style>
