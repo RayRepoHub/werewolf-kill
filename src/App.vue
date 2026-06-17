@@ -453,6 +453,7 @@ export default {
       godPowerVisible: false, // 上帝之力弹窗
       enableGodPower: false, // 是否开启上帝手动派身份
       switchServerVisible: false, // 切换服务弹窗
+      localReadMsgId: "",
     };
   },
 
@@ -480,6 +481,7 @@ export default {
     this.loadLocalMarks();
     this.getRoleConfig();
     this.getGame();
+    this.localReadMsgId = localStorage.getItem("readMsgId") || "";
   },
 
   beforeDestroy() {
@@ -488,6 +490,34 @@ export default {
   },
 
   methods: {
+    // 弹出新公告确认弹窗
+    showNewMsgConfirm(msg) {
+      const defaultInitMsg = "对局已创建";
+      if (
+        !msg ||
+        msg === defaultInitMsg ||
+        this.localReadMsgId === msg ||
+        this.isJudge
+      ) {
+        return;
+      }
+
+      this.$confirm(`${msg}`, `【${this.GOD_NAME}广播】`, {
+        confirmButtonText: "我已知晓",
+        showCancelButton: false,
+        closeOnClickModal: false,
+        showClose: false,
+        customClass: "msg-box", // 专属弹窗类名，单独写换行样式
+      })
+        .then(() => {
+          this.localReadMsgId = msg;
+          localStorage.setItem("readMsgId", msg);
+        })
+        .catch(() => {
+          this.localReadMsgId = msg;
+          localStorage.setItem("readMsgId", msg);
+        });
+    },
     async openGodPowerPanel() {
       // 过滤掉上帝自己，判断是否存在其他玩家
       const otherPlayers = this.players.filter((p) => p.role !== this.GOD_NAME);
@@ -780,7 +810,7 @@ export default {
       this.refreshLoading = true;
       let queryTimeout = null;
 
-      // 7秒请求超时判断
+      // 7秒请求超时弹窗定时器
       queryTimeout = setTimeout(() => {
         this.$msgbox({
           title: "请求超时",
@@ -849,13 +879,16 @@ export default {
 
         this.isJudge = this.gameData.judge === this.localPlayer.name;
         this.refreshVoteStat();
+
+        // 直接调用封装好的公告弹窗函数
+        this.showNewMsgConfirm(this.gameData.msg);
       } catch (err) {
         this.$message.error("刷新失败");
       } finally {
-        // 统一清除超时定时器，不用两处重复写
+        // 统一清除超时定时器，避免超时弹窗乱弹出
         if (queryTimeout) clearTimeout(queryTimeout);
 
-        // 强制等待至少300ms再关闭loading，保证动画可见
+        // 强制最少300ms loading动画，保证用户感知刷新动作
         const cost = Date.now() - refreshStart;
         const minShowTime = 300;
         if (cost < minShowTime) {
@@ -1087,6 +1120,8 @@ export default {
           this.$message.success("已成功退出对局");
           this.localMarks = {};
           localStorage.removeItem("localMarks");
+          this.localReadMsgId = "";
+          localStorage.removeItem("readMsgId");
         })
         .catch(() => {});
     },
@@ -1126,6 +1161,8 @@ export default {
             note: "",
           };
           this.saveLocal();
+          this.localReadMsgId = "";
+          localStorage.removeItem("readMsgId");
           this.endLoading = false;
           this.$message.success("已成功结束本局");
           this.refreshAll();

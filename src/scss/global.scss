@@ -86,3 +86,9 @@
     width: 100%;
     max-width: 420px;
 }
+
+.msg-box .el-message-box__message p {
+    white-space: pre-wrap !important;
+    line-height: 1.6;
+    word-break: break-all;
+}
