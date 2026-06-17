@@ -53,9 +53,7 @@
 
     <!-- 已加入对局：游戏主面板 -->
     <div v-else-if="gameStatus.joined">
-      <el-button type="info" @click="refreshAll" class="mb-3">
-        刷新信息
-      </el-button>
+      <el-button type="info" @click="refreshAll"> 刷新信息 </el-button>
       <el-button
         v-if="isJudge"
         type="primary"
@@ -778,10 +776,12 @@ export default {
      * 获取对局最新数据
      */
     async getGame() {
+      const refreshStart = Date.now();
       this.refreshLoading = true;
+      let queryTimeout = null;
 
       // 7秒请求超时判断
-      const timeout = setTimeout(() => {
+      queryTimeout = setTimeout(() => {
         this.$msgbox({
           title: "请求超时",
           message: "当前服务响应过慢，是否立即切换到其他服务？",
@@ -800,7 +800,6 @@ export default {
 
       try {
         const res = await this.fetch();
-        clearTimeout(timeout);
 
         this.gameData = res || {};
         this.gameRoles = this.gameData.roles || {};
@@ -851,11 +850,22 @@ export default {
         this.isJudge = this.gameData.judge === this.localPlayer.name;
         this.refreshVoteStat();
       } catch (err) {
-        clearTimeout(timeout);
         this.$message.error("刷新失败");
-      }
+      } finally {
+        // 统一清除超时定时器，不用两处重复写
+        if (queryTimeout) clearTimeout(queryTimeout);
 
-      this.refreshLoading = false;
+        // 强制等待至少300ms再关闭loading，保证动画可见
+        const cost = Date.now() - refreshStart;
+        const minShowTime = 300;
+        if (cost < minShowTime) {
+          setTimeout(() => {
+            this.refreshLoading = false;
+          }, minShowTime - cost);
+        } else {
+          this.refreshLoading = false;
+        }
+      }
     },
 
     /**
