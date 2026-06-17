@@ -430,6 +430,7 @@ export default {
       players: [], // 在线玩家列表
       isJudge: false, // 当前用户是否为上帝
       judgeMsg: "", // 上帝广播内容
+      judgeInitMsg: "对局已创建", // 上帝广播初始内容
       API_BASE: "", // 当前接口服务地址
       roleSettingVisible: false, // 身份管理弹窗显示状态
 
@@ -492,10 +493,9 @@ export default {
   methods: {
     // 弹出新公告确认弹窗
     showNewMsgConfirm(msg) {
-      const defaultInitMsg = "对局已创建";
       if (
         !msg ||
-        msg === defaultInitMsg ||
+        msg === this.judgeInitMsg ||
         this.localReadMsgId === msg ||
         this.isJudge
       ) {
@@ -1004,7 +1004,7 @@ export default {
             dead: false,
           },
         ],
-        msg: "对局已创建",
+        msg: this.judgeInitMsg,
         votes: {},
         abandons: [],
       };
