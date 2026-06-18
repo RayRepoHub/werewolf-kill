@@ -868,36 +868,36 @@ export default {
         this.gameStatus.exist = !!this.gameData.judge;
         const me = this.players.find((i) => i.uuid === this.localPlayer.uuid);
 
-        // 对局存在 + 自己在玩家列表：正常保留对局状态
+        // ========== 修复旁观者刷新自动退出逻辑 ==========
         if (this.gameStatus.exist && me) {
+          // 房间存在且列表能找到自己，同步最新玩家信息
           this.gameStatus.joined = true;
           this.localPlayer = { ...this.localPlayer, ...me };
           this.saveLocal();
-        } else {
-          // 对局已解散 / 对局存在但自己被移出列表：自动退出对局
+        } else if (!this.gameStatus.exist) {
+          // 仅当对局彻底不存在时，才执行退出清空
           this.gameStatus.joined = false;
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
           this.localPlayer.dead = false;
           this.saveLocal();
 
-          // 之前处于已加入状态，给出对应提示
+          // 之前在房间内，弹出结束提示
           if (beforeJoined) {
-            if (!this.gameStatus.exist) {
-              this.$message.info(`${this.GOD_NAME}已结束对局`);
-            } else {
-              this.$message.info("你已被移出对局");
-              // 清空本地玩家备注
-              this.localMarks = {};
-              localStorage.removeItem("localMarks");
-            }
+            this.$message.info(`${this.GOD_NAME}已结束对局`);
+            // 清空本地备注、公告记录
+            this.localMarks = {};
+            localStorage.removeItem("localMarks");
+            this.localReadMsgId = "";
+            localStorage.removeItem("readMsgId");
           }
         }
+        // 房间存在但本次接口没查到自己：不做任何退出操作，保留原有joined状态
 
         this.isJudge = this.gameData.judge === this.localPlayer.name;
         this.refreshVoteStat();
 
-        // 直接调用封装好的公告弹窗函数
+        // 调用公告弹窗
         this.showNewMsgConfirm(this.gameData.msg);
       } catch (err) {
         this.$message.error("刷新失败");
