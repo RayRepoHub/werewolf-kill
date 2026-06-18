@@ -127,17 +127,29 @@ export default {
       if (command === "randomRole") this.randomRole(checkedPlayers);
     },
 
-    // 随机分配序号：仅勾选玩家内部打乱，未勾选不变
+    // 随机分配序号：仅勾选玩家从1开始编号，未勾选全部清空序号
     randomSeq(checkedPlayers) {
-      const count = checkedPlayers.length;
-      let seqArr = Array.from({ length: count }, (_, i) => i + 1);
-      seqArr = this.shuffle(seqArr);
+      const allPlayers = this.playerList;
+      const needCount = checkedPlayers.length;
 
-      checkedPlayers.forEach((p, idx) => {
-        p.seq = seqArr[idx];
+      // 1. 未勾选玩家序号全部置空
+      allPlayers.forEach((p) => {
+        if (!p.checked) {
+          p.seq = null;
+        }
       });
+
+      // 2. 生成 1 ~ needCount 连续数字并打乱
+      const seqArr = Array.from({ length: needCount }, (_, i) => i + 1);
+      const shuffledSeq = this.shuffle(seqArr);
+
+      // 3. 分配给勾选玩家
+      checkedPlayers.forEach((player, idx) => {
+        player.seq = shuffledSeq[idx];
+      });
+
       this.$message.success(
-        `已为${checkedPlayers.length}名勾选玩家随机分配序号`
+        `已清空未勾选玩家序号，为${needCount}名勾选玩家随机分配1起连续序号`
       );
     },
 
