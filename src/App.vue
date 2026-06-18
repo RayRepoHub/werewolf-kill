@@ -510,12 +510,12 @@ export default {
     },
     // 弹出新公告确认弹窗
     showNewMsgConfirm(msg) {
-      if (
-        !msg ||
-        msg === this.judgeInitMsg ||
-        this.localReadMsgId === msg ||
-        this.isJudge
-      ) {
+      // 未加入对局不弹出
+      if (!this.gameStatus.joined) return;
+      // 上帝不弹出
+      if (this.isJudge) return;
+      // 消息内容条件：空消息、初始化默认公告不弹出
+      if (!msg || msg === this.judgeInitMsg || this.localReadMsgId === msg) {
         return;
       }
 
@@ -524,15 +524,15 @@ export default {
         showCancelButton: false,
         closeOnClickModal: false,
         showClose: false,
-        customClass: "msg-box", // 专属弹窗类名，单独写换行样式
+        customClass: "msg-box",
       })
         .then(() => {
+          // 点击确认标记已读
           this.localReadMsgId = msg;
           localStorage.setItem("readMsgId", msg);
         })
         .catch(() => {
-          this.localReadMsgId = msg;
-          localStorage.setItem("readMsgId", msg);
+          // 消除Promise报错
         });
     },
     async openGodPowerPanel() {
