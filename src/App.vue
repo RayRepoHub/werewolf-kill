@@ -112,6 +112,7 @@
             "
             type="success"
             @click="drawRole"
+            :disabled="drawRoleLoading"
           >
             抽取身份牌
           </el-button>
@@ -453,6 +454,7 @@ export default {
       enableGodPower: false, // 是否开启上帝手动派身份
       switchServerVisible: false, // 切换服务弹窗
       localReadMsgId: "",
+      drawRoleLoading: false, // 抽身份加载锁，防止并发重复请求
     };
   },
 
@@ -1034,40 +1036,76 @@ export default {
     },
 
     /**
-     * 玩家主动抽取身份牌
+     * 抽取身份牌 - 前端并发优化版
+     * 解决多人同时抽牌重复稀有身份问题
      */
     async drawRole() {
-      const g = this.gameData;
-      let fullDeck = [];
-      // 生成身份牌堆
-      Object.entries(g.roles).forEach(([name, cnt]) => {
-        for (let i = 0; i < cnt; i++) fullDeck.push(name);
-      });
-      // 剔除已被抽取的身份
-      this.players.forEach((p) => {
-        if (p.role && p.role !== this.GOD_NAME) {
-          const idx = fullDeck.indexOf(p.role);
-          if (idx > -1) fullDeck.splice(idx, 1);
+      // 拦截：如果正在执行抽牌，直接返回，防止重复并发请求
+      if (this.drawRoleLoading) return;
+      // 开启加载锁，按钮禁用、显示loading
+      this.drawRoleLoading = true;
+
+      try {
+        // ========== 关键1：先拉取后端最新完整对局数据 ==========
+        // 多人同时点击时，每个人都会先拿最新快照，减少身份池重复
+        await this.getGame();
+        const g = this.gameData;
+        let fullDeck = [];
+
+        // 根据当前最新身份配置生成完整牌堆
+        Object.entries(g.roles).forEach(([name, cnt]) => {
+          for (let i = 0; i < cnt; i++) fullDeck.push(name);
+        });
+
+        // ========== 关键2：剔除已经被其他人抽走的身份（最新players列表） ==========
+        this.players.forEach((p) => {
+          // 上帝身份不参与玩家抽取，跳过
+          if (p.role && p.role !== this.GOD_NAME) {
+            const idx = fullDeck.indexOf(p.role);
+            if (idx > -1) fullDeck.splice(idx, 1);
+          }
+        });
+
+        // 牌池空了，直接终止
+        if (fullDeck.length === 0) {
+          this.$message.error("所有身份牌已发放完毕");
+          return;
         }
-      });
-      if (fullDeck.length === 0) {
-        this.$message.error("发完了");
-        return;
+
+        // 获取当前玩家自身对象
+        const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
+        // 收集所有已占用序号，分配最小空序号
+        const usedSeqs = this.players.map((p) => p.seq).filter(Boolean);
+        let seq = 1;
+        while (usedSeqs.includes(seq)) seq++;
+
+        // 本地随机抽取一张身份
+        const randomIndex = Math.floor(Math.random() * fullDeck.length);
+        const pickRole = fullDeck[randomIndex];
+        me.role = pickRole;
+        me.seq = seq;
+
+        // 更新本地玩家缓存并持久化到localStorage
+        this.localPlayer = { ...this.localPlayer, ...me };
+        this.saveLocal();
+
+        // 把新身份数据提交到后端存储
+        await this.saveGame();
+
+        // ========== 关键3：保存完成后再次刷新 ==========
+        // 同步本次提交后其他玩家的最新状态，刷新本地身份池
+        await this.getGame();
+        this.$message.success(`抽取成功，你的身份：${pickRole}`);
+      } catch (err) {
+        // 网络异常、并发冲突报错处理
+        console.error("抽身份失败", err);
+        this.$message.error("身份分配冲突或网络异常，请重新点击抽取");
+        // 出错强制刷新，清除本地脏缓存
+        await this.getGame();
+      } finally {
+        // 无论成功失败，都释放加载锁，恢复按钮可用
+        this.drawRoleLoading = false;
       }
-
-      // 分配序号 + 随机身份
-      const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
-      const usedSeqs = this.players.map((p) => p.seq).filter(Boolean);
-      let seq = 1;
-      while (usedSeqs.includes(seq)) seq++;
-      const rndIdx = Math.floor(Math.random() * fullDeck.length);
-      me.role = fullDeck[rndIdx];
-      me.seq = seq;
-
-      this.localPlayer = { ...this.localPlayer, ...me };
-      this.saveLocal();
-      await this.saveGame();
-      this.$message.success("抽牌成功");
     },
 
     /**
