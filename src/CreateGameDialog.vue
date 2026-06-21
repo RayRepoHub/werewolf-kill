@@ -41,6 +41,14 @@
             <span class="highlight-text">{{ GOD_NAME }}</span>
             指派身份
           </el-checkbox>
+          <!-- 新增第三方阵营勾选框 -->
+          <el-checkbox
+            v-model="createForm.hasThird"
+            class="setting-checkbox"
+            style="margin-top: 8px"
+          >
+            本局包含第三方阵营
+          </el-checkbox>
         </div>
       </div>
 
@@ -98,11 +106,12 @@ export default {
       ADMIN_PASSWORD,
       createLoading: false,
       enableGodPower: false,
-      // 拆分管理员密码 + 房间密码
+      // 对局设定表单
       createForm: {
         roles: {},
         adminPwd: "",
         roomPwd: "",
+        hasThird: false,
       },
     };
   },
@@ -122,6 +131,7 @@ export default {
         this.rebuildCreateForm();
         this.createForm.adminPwd = "";
         this.createForm.roomPwd = "";
+        this.createForm.hasThird = false;
         this.enableGodPower = false;
       }
     },
@@ -140,7 +150,7 @@ export default {
     },
 
     async handleCreate() {
-      const { roles, adminPwd, roomPwd } = this.createForm;
+      const { roles, adminPwd, roomPwd, hasThird } = this.createForm;
       // 校验管理员密码
       if (!adminPwd?.trim()) {
         this.$message.error("请输入管理员密码！");
@@ -173,6 +183,9 @@ export default {
       const modeText = this.enableGodPower
         ? `· 身份派发方式：由${this.GOD_NAME}指派身份`
         : "· 身份派发方式：玩家自行抽取身份牌";
+      const thirdText = hasThird
+        ? "· 本局包含第三方阵营"
+        : "· 本局无第三方阵营";
 
       const htmlContent = `
     <div style="line-height: 1.8; text-align: left;">
@@ -184,6 +197,7 @@ export default {
       <br/>
       <div><strong>【派牌规则】</strong></div>
       <div>${modeText}</div>
+      <div>${thirdText}</div>
       <br/>
       <div>确认创建该对局吗？</div>
     </div>
@@ -204,11 +218,12 @@ export default {
       }
 
       this.createLoading = true;
-      // 把房间密码一并传给父组件
+      // 把对局设定表单数据一并传给父组件
       this.$emit("create", {
         gameRoles,
         enableGodPower: this.enableGodPower,
         roomPwd: roomPwd.trim(),
+        hasThird: hasThird,
       });
       this.visibleLocal = false;
     },
@@ -251,6 +266,7 @@ export default {
 .setting-checkbox {
   font-size: 14px;
   font-weight: 500;
+  display: block;
 }
 
 .highlight-text {

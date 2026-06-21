@@ -151,6 +151,17 @@
                 <span v-if="p.dead" style="color: red; margin: 0 5px">
                   [死亡]
                 </span>
+                <!-- 新增第三方标记展示 -->
+                <span
+                  v-if="
+                    gameData.hasThird &&
+                    (localPlayer.thirdMark || isJudge) &&
+                    p.thirdMark
+                  "
+                  style="color: #9370db; margin-left: 6px"
+                >
+                  【{{ p.thirdMark }}】
+                </span>
               </template>
               <template v-else>
                 {{ p.name }}
@@ -173,6 +184,15 @@
               style="margin-left: 10px"
             >
               {{ p.dead ? "设为存活" : "标记死亡" }}
+            </el-button>
+            <!-- 新增：第三方标记按钮，仅开启第三方对局+上帝可见 -->
+            <el-button
+              v-if="isJudge && p.seq && gameData.hasThird"
+              type="text"
+              @click="openThirdMarkDialog(p)"
+              style="margin-left: 8px; color: #9370db"
+            >
+              第三方标记
             </el-button>
           </div>
           <el-button
@@ -422,7 +442,7 @@ export default {
       originalName: "", // 编辑昵称前的原始名称
 
       roleConfigList: [], // 全局身份配置列表
-      createForm: { roles: {}, pwd: "" }, // 创建对局表单
+      createForm: { roles: {}, pwd: "", hasThird: false }, // 创建对局表单 新增hasThird
 
       gameData: {}, // 对局全局数据
       gameStatus: { exist: false, joined: false }, // 对局状态：是否存在、是否已加入
@@ -798,6 +818,7 @@ export default {
           seq: 0,
           dead: false,
           note: "",
+          thirdMark: "",
         };
       }
       this.saveLocal();
@@ -987,6 +1008,7 @@ export default {
         role: "",
         seq: 0,
         dead: false,
+        thirdMark: "",
       });
       this.gameData.players = this.players;
       await this.saveGame();
@@ -1005,12 +1027,13 @@ export default {
      * 接收子组件参数，执行创建对局逻辑
      */
     async onCreateGame(params) {
-      const { gameRoles, enableGodPower, roomPwd } = params;
+      const { gameRoles, enableGodPower, roomPwd, hasThird } = params;
       this.createLoading = true;
 
       // 初始化对局数据，存入房间密码
       this.gameData = {
         judge: this.localPlayer.name,
+        hasThird: hasThird,
         roles: gameRoles,
         enableGodPower: enableGodPower,
         roomPwd: roomPwd || "", // 房间密码，空代表无密码
@@ -1021,6 +1044,7 @@ export default {
             role: this.GOD_NAME,
             seq: 0,
             dead: false,
+            thirdMark: "",
           },
         ],
         msg: this.judgeInitMsg,
@@ -1293,6 +1317,23 @@ export default {
       await this.saveGame();
       this.refreshVoteStat();
       this.$message.info("你已弃票");
+    },
+
+    // 新增：打开第三方标记弹窗
+    async openThirdMarkDialog(player) {
+      const { value } = await this.$prompt(
+        "设置该玩家第三方标记，留空清空标记",
+        "第三方标记",
+        {
+          inputValue: player.thirdMark,
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+        }
+      );
+      if (value === undefined) return;
+      player.thirdMark = value.trim();
+      await this.saveGame();
+      this.$message.success("第三方标记已更新");
     },
   },
 };
