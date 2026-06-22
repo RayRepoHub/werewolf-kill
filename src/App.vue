@@ -148,32 +148,33 @@
                   ></el-option>
                 </el-select>
                 {{ p.seq }} - {{ p.name }}
+                <!-- 身份信息 -->
+                <span v-if="(p.role && isJudge) || p.role === GOD_NAME">
+                  {{ `(${p.role})` }}
+                </span>
+                <!-- 死亡标签（放在第三方前面） -->
                 <span v-if="p.dead" style="color: red; margin: 0 5px">
                   [死亡]
                 </span>
-                <!-- 新增第三方标记展示 -->
+                <!-- 第三方标记，放在最后 -->
                 <span
                   v-if="
                     gameData.hasThird &&
                     (localPlayer.thirdMark || isJudge) &&
                     p.thirdMark
                   "
-                  style="color: #9370db; margin-left: 6px"
+                  style="color: #9370db; margin: 0 6px"
                 >
                   【{{ p.thirdMark }}】
-                </span>
-              </template>
-              <template v-else>
+                </span> </template
+              ><template v-else>
                 {{ p.name }}
                 <span v-if="p.dead" style="color: red; margin-left: 5px">
                   [死亡]
                 </span>
               </template>
             </span>
-            <span v-if="(p.role && isJudge) || p.role === GOD_NAME">
-              {{ `(${p.role})` }}
-            </span>
-            <span v-else-if="!p.role"> (旁观者) </span>
+            <span v-if="!p.role"> (旁观者) </span>
 
             <!-- 上帝标记玩家生死 -->
             <el-button
@@ -185,7 +186,7 @@
             >
               {{ p.dead ? "设为存活" : "标记死亡" }}
             </el-button>
-            <!-- 新增：第三方标记按钮，仅开启第三方对局+上帝可见 -->
+            <!-- 第三方标记操作按钮 -->
             <el-button
               v-if="isJudge && p.seq && gameData.hasThird"
               type="text"
@@ -522,7 +523,7 @@ export default {
         if (p.role === this.GOD_NAME) {
           line = `上帝 - ${p.name}`;
         } else if (p.seq) {
-          line = `${p.seq}号 ${p.name}(${p.role})${p.dead ? " [死亡]" : ""}`;
+          line = `${p.seq} - ${p.name}(${p.role})${p.dead ? " [死亡]" : ""}`;
           // 开启第三方阵营 + 该玩家有标记才拼接
           if (hasThirdSwitch && p.thirdMark.trim()) {
             line += ` 【${p.thirdMark}】`;
@@ -1331,8 +1332,10 @@ export default {
         "第三方标记",
         {
           inputValue: player.thirdMark,
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
+          customClass: "msg-box",
+          center: true,
+          showClose: false,
+          closeOnClickModal: false,
         }
       );
       if (value === undefined) return;
