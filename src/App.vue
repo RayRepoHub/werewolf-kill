@@ -153,9 +153,7 @@
                   {{ `(${p.role})` }}
                 </span>
                 <!-- 死亡标签（放在第三方前面） -->
-                <span v-if="p.dead" style="color: red; margin: 0 5px">
-                  [死亡]
-                </span>
+                <span v-if="p.dead" style="color: red"> [死亡] </span>
                 <!-- 第三方标记，放在最后 -->
                 <span
                   v-if="
@@ -163,15 +161,13 @@
                     (localPlayer.thirdMark || isJudge) &&
                     p.thirdMark
                   "
-                  style="color: #9370db; margin: 0 6px"
+                  style="color: #9370db"
                 >
                   【{{ p.thirdMark }}】
                 </span> </template
               ><template v-else>
                 {{ p.name }}
-                <span v-if="p.dead" style="color: red; margin-left: 5px">
-                  [死亡]
-                </span>
+                <span v-if="p.dead" style="color: red"> [死亡] </span>
               </template>
             </span>
             <span v-if="!p.role"> (旁观者) </span>
