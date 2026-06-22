@@ -37,7 +37,7 @@
         <h3 class="section-title">2. 游戏附加设定</h3>
         <div class="setting-box">
           <el-checkbox v-model="enableGodPower" class="setting-checkbox">
-            是否由
+            由
             <span class="highlight-text">{{ GOD_NAME }}</span>
             指派身份
           </el-checkbox>
@@ -45,9 +45,9 @@
           <el-checkbox
             v-model="createForm.hasThird"
             class="setting-checkbox"
-            style="margin-top: 8px"
+            style="margin-top: 12px"
           >
-            本局包含第三方阵营
+            包含<span class="highlight-text"> 第三方阵营 </span>
           </el-checkbox>
         </div>
       </div>
