@@ -516,12 +516,17 @@ export default {
      */
     fillPlayerListToBroadcast() {
       let text = "当前对局玩家列表：\n";
+      const hasThirdSwitch = !!this.gameData.hasThird;
       this.players.forEach((p) => {
         let line = "";
         if (p.role === this.GOD_NAME) {
           line = `上帝 - ${p.name}`;
         } else if (p.seq) {
           line = `${p.seq}号 ${p.name}(${p.role})${p.dead ? " [死亡]" : ""}`;
+          // 开启第三方阵营 + 该玩家有标记才拼接
+          if (hasThirdSwitch && p.thirdMark.trim()) {
+            line += ` 【${p.thirdMark}】`;
+          }
         } else {
           line = `${p.name} (旁观者)`;
         }
