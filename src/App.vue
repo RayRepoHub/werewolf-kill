@@ -150,7 +150,8 @@
                   <span
                     v-if="
                       gameData.hasThird &&
-                      (isJudge || (p.thirdMark && localPlayer.thirdMark))
+                      ((isJudge && p.thirdMark) ||
+                        (p.thirdMark && localPlayer.thirdMark))
                     "
                     class="third-tag"
                   >
@@ -213,7 +214,7 @@
               class="broadcast-btn"
               @click="fillPlayerListToBroadcast"
             >
-              一键填充玩家列表到广播
+              将列表信息填入广播输入框
             </el-button>
           </div>
         </el-collapse-item>
@@ -299,7 +300,7 @@
                 @click="fillVoteToBroadcast"
                 style="margin-top: 8px"
               >
-                一键填充投票结果到广播
+                将投票结果填入广播输入框
               </el-button>
             </div>
             <div v-else>暂无投票信息</div>
