@@ -279,52 +279,76 @@
           <template slot="title">
             投票信息<svg-icon icon-class="ticket" class="panel-title-icon" />
           </template>
-          <div v-if="localPlayer.dead">你已经出局，无法参与投票</div>
-          <div v-else-if="isJudge" style="line-height: 1.8">
-            <div v-if="Object.keys(voteStat).length || abandonList.length">
-              <div v-for="(voters, targetSeq) in voteStat" :key="targetSeq">
-                {{ targetSeq }}号({{ voters.length }}票)：{{
-                  voters.join("号、")
-                }}号
-              </div>
+          <div class="vote-wrap">
+            <!-- 已出局玩家提示 -->
+            <div v-if="localPlayer.dead" class="vote-tip dead-tip">
+              你已经出局，无法参与投票
+            </div>
+
+            <!-- 上帝查看完整投票统计 -->
+            <div v-else-if="isJudge" class="judge-vote-box">
               <div
-                style="margin-top: 8px; font-weight: bold"
-                v-if="abandonList && abandonList.length > 0"
+                v-if="Object.keys(voteStat).length || abandonList.length"
+                class="vote-list"
               >
-                弃票：{{ abandonList.join("号、") }}号
+                <div
+                  v-for="(voters, targetSeq) in voteStat"
+                  :key="targetSeq"
+                  class="vote-item"
+                >
+                  <span class="target-num">{{ targetSeq }}号</span>
+                  <span class="vote-count">({{ voters.length }}票)</span>：
+                  <span class="voter-list">{{ voters.join("号、") }}号</span>
+                </div>
+                <div
+                  style="margin-top: 8px; font-weight: bold"
+                  v-if="abandonList && abandonList.length > 0"
+                  class="abandon-text"
+                >
+                  弃票：{{ abandonList.join("号、") }}号
+                </div>
+                <el-button
+                  type="success"
+                  size="mini"
+                  icon="el-icon-copy-document"
+                  @click="fillVoteToBroadcast"
+                  style="margin-top: 8px"
+                  class="vote-fill-btn"
+                >
+                  投票结果填入广播
+                </el-button>
               </div>
-              <el-button
-                type="success"
-                size="mini"
-                icon="el-icon-copy-document"
-                @click="fillVoteToBroadcast"
-                style="margin-top: 8px"
-              >
-                将投票结果填入广播输入框
-              </el-button>
+              <div v-else class="empty-tip">暂无投票信息</div>
             </div>
-            <div v-else>暂无投票信息</div>
+
+            <!-- 普通存活玩家投票操作区 -->
+            <div
+              v-else-if="localPlayer.role && localPlayer.seq"
+              class="player-vote-box"
+            >
+              <el-input
+                v-model.number="voteTarget"
+                type="number"
+                placeholder="输入你要投的玩家序号"
+                style="width: 200px; margin-bottom: 8px"
+                class="vote-input"
+              ></el-input>
+              <div style="display: flex; gap: 10px" class="vote-btn-group">
+                <el-button size="mini" type="info" @click="doAbandon">
+                  弃票
+                </el-button>
+                <el-button size="mini" type="primary" @click="doVote">
+                  确认投票
+                </el-button>
+              </div>
+              <div style="margin-top: 10px" class="current-vote-text">
+                当前你的选择：{{ voteTarget ? voteTarget + "号" : "弃票" }}
+              </div>
+            </div>
+
+            <!-- 未抽身份提示 -->
+            <div v-else class="vote-tip empty-tip">请先抽取身份后再投票</div>
           </div>
-          <div v-else-if="localPlayer.role && localPlayer.seq">
-            <el-input
-              v-model.number="voteTarget"
-              type="number"
-              placeholder="输入你要投的玩家序号"
-              style="width: 200px; margin-bottom: 8px"
-            ></el-input>
-            <div style="display: flex; gap: 10px">
-              <el-button size="mini" type="info" @click="doAbandon">
-                弃票
-              </el-button>
-              <el-button size="mini" type="primary" @click="doVote">
-                确认投票
-              </el-button>
-            </div>
-            <div style="margin-top: 10px">
-              当前你的选择：{{ voteTarget ? voteTarget + "号" : "弃票" }}
-            </div>
-          </div>
-          <div v-else>请先抽取身份后再投票</div>
         </el-collapse-item>
 
         <!-- 上帝广播面板 -->
@@ -1546,6 +1570,92 @@ export default {
   // 上帝一键填充广播按钮
   .broadcast-btn {
     margin-top: 6px;
+  }
+}
+// ====================== 投票面板样式新增 ======================
+.vote-wrap {
+  padding: 4px 0;
+
+  // 通用提示文字
+  .vote-tip {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  // 出局灰色提示
+  .dead-tip {
+    color: #86909c;
+  }
+  // 空数据浅灰提示
+  .empty-tip {
+    color: #bfc4cc;
+  }
+
+  // 上帝投票统计盒子
+  .judge-vote-box {
+    line-height: 1.8;
+
+    // 投票条目容器
+    .vote-list {
+      padding: 8px 10px;
+      background: #f7f8fa;
+      border-radius: 6px;
+    }
+    // 单条投票记录
+    .vote-item {
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+
+      .target-num {
+        color: #1890ff;
+        font-weight: 500;
+      }
+      .vote-count {
+        color: #666;
+        font-size: 13px;
+      }
+      .voter-list {
+        color: #333;
+      }
+    }
+    // 弃票文字高亮
+    .abandon-text {
+      color: #f5222d;
+      padding-top: 6px;
+      border-top: 1px dashed #e5e7eb;
+      margin-top: 8px;
+    }
+    // 填充广播按钮
+    .vote-fill-btn {
+      margin-top: 8px;
+    }
+  }
+
+  // 玩家投票操作区域
+  .player-vote-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .vote-input {
+      width: 200px;
+    }
+    .vote-btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    // 当前投票选择文字
+    .current-vote-text {
+      font-size: 14px;
+      color: #333;
+      padding: 6px 8px;
+      background: #f0f7ff;
+      border-radius: 4px;
+      display: inline-block;
+      width: fit-content;
+    }
   }
 }
 </style>
