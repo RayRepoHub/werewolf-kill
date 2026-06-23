@@ -1357,141 +1357,15 @@ export default {
 };
 </script>
 
-<style scoped>
-.player-list-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.player-item {
-  padding: 12px 14px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-/* 出局玩家整体淡化 */
-.player-item.dead {
-  background: #f7f8fa;
-  opacity: 0.72;
-}
-/* 自身卡片高亮区分 */
-.player-item.self-player {
-  background-color: #f0f7ff;
-}
-.player-item:hover {
-  border-color: #c0c4cc;
-}
-.player-item.self-player:hover {
-  border-color: #1890ff;
-}
-
-/* 主横向行：所有元素垂直居中对齐 */
-.player-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-/* 名字标签区域自动占剩余宽度 */
-.player-name-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  flex: 1;
-}
-/* 出局名字变红 */
-.player-name.dead {
-  color: #f5222d;
-}
-/* 已出局后缀文字样式 */
-.dead-suffix {
-  color: #f5222d;
-  font-size: 13px;
-}
-
-.seq-tag {
-  min-width: 24px;
-  height: 24px;
-  line-height: 24px;
-  text-align: center;
-  background: #e5e7eb;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #333;
-}
-.player-name {
-  font-size: 15px;
-  font-weight: 500;
-}
-.role-tag {
-  padding: 2px 6px;
-  background: #e6f7ff;
-  color: #1890ff;
-  border-radius: 4px;
-  font-size: 12px;
-}
-.third-tag {
-  padding: 2px 6px;
-  background: #f9f0ff;
-  color: #9370db;
-  border-radius: 4px;
-  font-size: 12px;
-}
-.player-desc {
-  font-size: 12px;
-  color: #999;
-}
-
-.player-actions {
-  flex-shrink: 0;
-}
-.mark-select {
-  width: 110px;
-  flex-shrink: 0;
-}
-.broadcast-btn {
-  margin-top: 6px;
-}
-.panel-title-icon {
-  margin-left: 4px;
-}
-.timer-box {
-  font-family: "Courier New", monospace;
-  font-size: 32px;
-  font-weight: bold;
-  width: 180px;
-  margin: 0 auto 16px;
-  letter-spacing: 1px;
-  text-align: center;
-}
+<style lang="scss" scoped>
+// 页面最外层容器
 .werewolf-game-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
 }
-.game-action-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  max-width: 420px;
-  margin: 10px auto 0;
-}
-.game-action-buttons .el-button {
-  color: #fff;
-  width: 100%;
-  height: 60px;
-  font-size: 18px;
-  margin-left: 0 !important; /* 覆盖Element自带的margin-left */
-}
-.game-action-buttons .role-btn {
-  background: #9277e3;
-  border-color: #9277e3;
-}
+
+// 页面通用基础类
 .text-center {
   text-align: center;
 }
@@ -1511,5 +1385,166 @@ export default {
 }
 .text-green {
   color: green;
+}
+
+// 顶部创建/加入对局按钮组
+.game-action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-width: 420px;
+  margin: 10px auto 0;
+
+  .el-button {
+    color: #fff;
+    width: 100%;
+    height: 60px;
+    font-size: 18px;
+    margin-left: 0 !important; // 覆盖Element自带的margin-left
+  }
+
+  .role-btn {
+    background: #9277e3;
+    border-color: #9277e3;
+  }
+}
+
+// 折叠面板标题小图标
+.panel-title-icon {
+  margin-left: 4px;
+}
+
+// 计时面板数字样式
+.timer-box {
+  font-family: "Courier New", monospace;
+  font-size: 32px;
+  font-weight: bold;
+  width: 180px;
+  margin: 0 auto 16px;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+// ====================== 玩家列表 嵌套分层核心 ======================
+.player-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  // 单张玩家卡片容器
+  .player-item {
+    padding: 12px 14px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    // 卡片悬浮样式
+    &:hover {
+      border-color: #c0c4cc;
+    }
+
+    // 当前登录玩家自己的卡片高亮
+    &.self-player {
+      background-color: #f0f7ff;
+      &:hover {
+        border-color: #1890ff;
+      }
+    }
+
+    // 已出局玩家卡片弱化
+    &.dead {
+      background: #f7f8fa;
+      opacity: 0.72;
+    }
+
+    // 卡片内横向一行（序号、名字、标签、操作按钮同行）
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      // 左侧：序号+玩家名+各类标签区域
+      .player-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        flex: 1;
+
+        // 序号灰色小方块
+        .seq-tag {
+          min-width: 24px;
+          height: 24px;
+          line-height: 24px;
+          text-align: center;
+          background: #e5e7eb;
+          border-radius: 4px;
+          font-size: 12px;
+          color: #333;
+        }
+
+        // 玩家名称文字
+        .player-name {
+          font-size: 15px;
+          font-weight: 500;
+          // 出局名字变红
+          &.dead {
+            color: #f5222d;
+          }
+        }
+
+        // 出局后缀小字 (出局)
+        .dead-suffix {
+          color: #f5222d;
+          font-size: 13px;
+        }
+
+        // 上帝可见身份标签
+        .role-tag {
+          padding: 2px 6px;
+          background: #e6f7ff;
+          color: #1890ff;
+          border-radius: 4px;
+          font-size: 12px;
+        }
+
+        // 第三方阵营标记标签
+        .third-tag {
+          padding: 2px 6px;
+          background: #f9f0ff;
+          color: #9370db;
+          border-radius: 4px;
+          font-size: 12px;
+        }
+      }
+
+      // 上帝操作下拉按钮容器
+      .player-actions {
+        flex-shrink: 0;
+      }
+
+      // 普通玩家备注下拉框
+      .mark-select {
+        width: 110px;
+        flex-shrink: 0;
+      }
+    }
+
+    // 旁观者小字说明
+    .player-desc {
+      font-size: 12px;
+      color: #999;
+    }
+  }
+
+  // 上帝一键填充广播按钮
+  .broadcast-btn {
+    margin-top: 6px;
+  }
 }
 </style>
