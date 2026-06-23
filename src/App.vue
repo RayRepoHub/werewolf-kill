@@ -123,20 +123,72 @@
           <template slot="title">
             玩家列表<svg-icon icon-class="list" class="panel-title-icon" />
           </template>
-          <div
-            v-for="p in players"
-            :key="p.seq || p.name"
-            class="border-bottom"
-          >
-            <span :class="{ dead: p.dead }">
-              <template v-if="p.seq && p.role">
-                <!-- 玩家私人备注下拉框 -->
+          <div class="player-list-wrap">
+            <div
+              v-for="p in players"
+              :key="p.seq || p.name"
+              class="player-item"
+              :class="{
+                dead: p.dead,
+                'self-player': p.uuid === localPlayer.uuid,
+              }"
+            >
+              <!-- 横向单行容器：序号、名字、标签、操作按钮、备注全部同行垂直居中 -->
+              <div class="player-row">
+                <div class="player-name-row">
+                  <span class="seq-tag">{{ p.seq || "-" }}</span>
+                  <span class="player-name" :class="{ dead: p.dead }">
+                    {{ p.name }}
+                    <span v-if="p.dead" class="dead-suffix">(出局)</span>
+                  </span>
+                  <span
+                    v-if="(p.role && isJudge) || p.role === GOD_NAME"
+                    class="role-tag"
+                  >
+                    {{ p.role }}
+                  </span>
+                  <span
+                    v-if="
+                      gameData.hasThird &&
+                      (isJudge || (p.thirdMark && localPlayer.thirdMark))
+                    "
+                    class="third-tag"
+                  >
+                    {{ p.thirdMark }}
+                  </span>
+                </div>
+
+                <!-- 上帝操作下拉：和文字同一水平线 -->
+                <div v-if="isJudge && p.seq" class="player-actions">
+                  <el-dropdown trigger="click" size="mini">
+                    <el-button size="mini" plain type="primary">
+                      操作 <i class="el-icon-arrow-down el-icon--right"></i>
+                    </el-button>
+                    <el-dropdown-menu slot="dropdown">
+                      <el-dropdown-item @click.native="toggleDead(p.seq)">
+                        {{ p.dead ? "设为存活" : "标记出局" }}
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-if="gameData.hasThird"
+                        @click.native="openThirdMarkDialog(p)"
+                      >
+                        第三方标记
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </el-dropdown>
+                </div>
+
+                <!-- 普通玩家备注下拉：禁止给自己、禁止给上帝 -->
                 <el-select
-                  v-if="!isJudge && p.uuid !== localPlayer.uuid"
+                  v-if="
+                    !isJudge &&
+                    p.uuid !== localPlayer.uuid &&
+                    p.role !== GOD_NAME
+                  "
                   v-model="localMarks[p.uuid]"
                   size="mini"
                   placeholder="备注"
-                  style="width: 110px; margin: 4px 8px 4px 0"
+                  class="mark-select"
                   @change="saveLocalMarks"
                 >
                   <el-option label="存疑" value="存疑"></el-option>
@@ -147,61 +199,23 @@
                     :value="roleName"
                   ></el-option>
                 </el-select>
-                {{ p.seq }} - {{ p.name }}
-                <!-- 身份信息 -->
-                <span v-if="(p.role && isJudge) || p.role === GOD_NAME">
-                  {{ `(${p.role})` }}
-                </span>
-                <!-- 死亡标签（放在第三方前面） -->
-                <span v-if="p.dead" style="color: red"> [死亡] </span>
-                <!-- 第三方标记，放在最后 -->
-                <span
-                  v-if="
-                    gameData.hasThird &&
-                    (localPlayer.thirdMark || isJudge) &&
-                    p.thirdMark
-                  "
-                  style="color: #9370db"
-                >
-                  【{{ p.thirdMark }}】
-                </span> </template
-              ><template v-else>
-                {{ p.name }}
-                <span v-if="p.dead" style="color: red"> [死亡] </span>
-              </template>
-            </span>
-            <span v-if="!p.role"> (旁观者) </span>
+              </div>
 
-            <!-- 上帝标记玩家生死 -->
+              <!-- 旁观者单独一行小字 -->
+              <div v-if="!p.role" class="player-desc">旁观者</div>
+            </div>
+
             <el-button
-              v-if="isJudge && p.seq"
-              type="text"
-              :class="p.dead ? 'text-green' : 'text-red'"
-              @click="toggleDead(p.seq)"
-              style="margin-left: 10px"
+              v-if="isJudge"
+              type="success"
+              size="mini"
+              icon="el-icon-copy-document"
+              class="broadcast-btn"
+              @click="fillPlayerListToBroadcast"
             >
-              {{ p.dead ? "设为存活" : "标记死亡" }}
-            </el-button>
-            <!-- 第三方标记操作按钮 -->
-            <el-button
-              v-if="isJudge && p.seq && gameData.hasThird"
-              type="text"
-              @click="openThirdMarkDialog(p)"
-              style="margin-left: 8px; color: #9370db"
-            >
-              第三方标记
+              一键填充玩家列表到广播
             </el-button>
           </div>
-          <el-button
-            v-if="isJudge"
-            type="success"
-            size="mini"
-            icon="el-icon-copy-document"
-            @click="fillPlayerListToBroadcast"
-            style="margin-top: 8px"
-          >
-            一键填充玩家列表到广播
-          </el-button>
         </el-collapse-item>
 
         <!-- 游戏笔记面板 -->
@@ -264,7 +278,7 @@
           <template slot="title">
             投票信息<svg-icon icon-class="ticket" class="panel-title-icon" />
           </template>
-          <div v-if="localPlayer.dead">你已经死亡，无法参与投票</div>
+          <div v-if="localPlayer.dead">你已经出局，无法参与投票</div>
           <div v-else-if="isJudge" style="line-height: 1.8">
             <div v-if="Object.keys(voteStat).length || abandonList.length">
               <div v-for="(voters, targetSeq) in voteStat" :key="targetSeq">
@@ -519,7 +533,7 @@ export default {
         if (p.role === this.GOD_NAME) {
           line = `上帝 - ${p.name}`;
         } else if (p.seq) {
-          line = `${p.seq} - ${p.name}(${p.role})${p.dead ? " [死亡]" : ""}`;
+          line = `${p.seq} - ${p.name}(${p.role})${p.dead ? " [出局]" : ""}`;
           // 开启第三方阵营 + 该玩家有标记才拼接
           if (hasThirdSwitch && p.thirdMark.trim()) {
             line += ` 【${p.thirdMark}】`;
@@ -1135,7 +1149,7 @@ export default {
     },
 
     /**
-     * 上帝标记/取消玩家死亡状态
+     * 上帝标记/取消玩家出局状态
      */
     async toggleDead(seq) {
       const p = this.players.find((i) => seq === i.seq);
@@ -1344,6 +1358,105 @@ export default {
 </script>
 
 <style scoped>
+.player-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.player-item {
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* 出局玩家整体淡化 */
+.player-item.dead {
+  background: #f7f8fa;
+  opacity: 0.72;
+}
+/* 自身卡片高亮区分 */
+.player-item.self-player {
+  background-color: #f0f7ff;
+}
+.player-item:hover {
+  border-color: #c0c4cc;
+}
+.player-item.self-player:hover {
+  border-color: #1890ff;
+}
+
+/* 主横向行：所有元素垂直居中对齐 */
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* 名字标签区域自动占剩余宽度 */
+.player-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+/* 出局名字变红 */
+.player-name.dead {
+  color: #f5222d;
+}
+/* 已出局后缀文字样式 */
+.dead-suffix {
+  color: #f5222d;
+  font-size: 13px;
+}
+
+.seq-tag {
+  min-width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  background: #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #333;
+}
+.player-name {
+  font-size: 15px;
+  font-weight: 500;
+}
+.role-tag {
+  padding: 2px 6px;
+  background: #e6f7ff;
+  color: #1890ff;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.third-tag {
+  padding: 2px 6px;
+  background: #f9f0ff;
+  color: #9370db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.player-desc {
+  font-size: 12px;
+  color: #999;
+}
+
+.player-actions {
+  flex-shrink: 0;
+}
+.mark-select {
+  width: 110px;
+  flex-shrink: 0;
+}
+.broadcast-btn {
+  margin-top: 6px;
+}
 .panel-title-icon {
   margin-left: 4px;
 }
