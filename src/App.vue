@@ -239,16 +239,11 @@
             rows="6"
             placeholder="请输入"
           />
-          <div class="w-full flex-end" style="margin-top: 8px; gap: 8px">
-            <el-button size="mini" icon="el-icon-delete" @click="clearNote">
-              清空笔记
+          <div class="w-full flex-end" style="margin-top: 8px">
+            <el-button type="info" size="mini" @click="clearNote">
+              清空
             </el-button>
-            <el-button
-              type="primary"
-              size="mini"
-              icon="el-icon-document"
-              @click="saveNote"
-            >
+            <el-button type="primary" size="mini" @click="saveNote">
               保存笔记
             </el-button>
           </div>
@@ -340,19 +335,15 @@
                 v-model.number="voteTarget"
                 type="number"
                 placeholder="输入你要投的玩家序号"
-                style="width: 200px; margin-bottom: 8px"
                 class="vote-input"
               ></el-input>
-              <div style="display: flex; gap: 10px" class="vote-btn-group">
+              <div class="flex-end">
                 <el-button size="mini" type="info" @click="doAbandon">
                   弃票
                 </el-button>
                 <el-button size="mini" type="primary" @click="doVote">
                   确认投票
                 </el-button>
-              </div>
-              <div style="margin-top: 10px" class="current-vote-text">
-                当前你的选择：{{ voteTarget ? voteTarget + "号" : "弃票" }}
               </div>
             </div>
 
@@ -376,15 +367,17 @@
               rows="6"
               placeholder="请输入"
             />
-            <div class="w-full flex-end">
+            <div class="w-full flex-end" style="margin: 8px 0">
+              <el-button type="info" size="mini" @click="clearBroadcastMsg">
+                清空
+              </el-button>
               <el-button
                 type="primary"
                 size="mini"
                 @click="sendMsg"
                 :loading="sendMsgLoading"
-                style="margin: 8px 0"
               >
-                发布
+                发布消息
               </el-button>
             </div>
           </div>
@@ -557,6 +550,13 @@ export default {
   },
 
   methods: {
+    /**
+     * 清空上帝广播输入框内容
+     */
+    clearBroadcastMsg() {
+      this.judgeMsg = "";
+      this.$message.info("广播内容已清空");
+    },
     /**
      * 一键将完整玩家列表填充到上帝广播输入框
      */
@@ -1654,21 +1654,7 @@ export default {
     gap: 8px;
 
     .vote-input {
-      width: 200px;
-    }
-    .vote-btn-group {
-      display: flex;
-      gap: 10px;
-    }
-    // 当前投票选择文字
-    .current-vote-text {
-      font-size: 14px;
-      color: #333;
-      padding: 6px 8px;
-      background: #f0f7ff;
-      border-radius: 4px;
-      display: inline-block;
-      width: fit-content;
+      width: 100%;
     }
   }
 }
