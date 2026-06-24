@@ -310,23 +310,24 @@
                   <span class="voter-list">{{ voters.join("号、") }}号</span>
                 </div>
                 <div
-                  style="margin-top: 8px; font-weight: bold"
                   v-if="abandonList && abandonList.length > 0"
                   class="abandon-text"
+                  :class="{ 'abandon-box': Object.keys(voteStat).length > 0 }"
                 >
                   弃票：{{ abandonList.join("号、") }}号
                 </div>
-                <el-button
-                  type="success"
-                  size="mini"
-                  icon="el-icon-copy-document"
-                  @click="fillVoteToBroadcast"
-                  style="margin-top: 8px"
-                  class="vote-fill-btn"
-                >
-                  投票结果填入广播
-                </el-button>
               </div>
+              <el-button
+                v-if="Object.keys(voteStat).length || abandonList.length"
+                type="success"
+                size="mini"
+                icon="el-icon-copy-document"
+                @click="fillVoteToBroadcast"
+                style="margin-top: 16px"
+                class="vote-fill-btn w-full"
+              >
+                将投票结果填入广播输入框
+              </el-button>
               <div v-else class="empty-tip">暂无投票信息</div>
             </div>
 
@@ -1629,12 +1630,16 @@ export default {
         color: #333;
       }
     }
+    // 弃票盒子
+    .abandon-box {
+      border-top: 1px dashed #e5e7eb;
+      margin-top: 8px;
+      padding-top: 6px;
+    }
     // 弃票文字高亮
     .abandon-text {
       color: #f5222d;
-      padding-top: 6px;
-      border-top: 1px dashed #e5e7eb;
-      margin-top: 8px;
+      font-weight: bold;
     }
     // 填充广播按钮
     .vote-fill-btn {
