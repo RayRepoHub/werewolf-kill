@@ -136,7 +136,7 @@
               <!-- 横向单行容器：序号、名字、标签、操作按钮、备注全部同行垂直居中 -->
               <div class="player-row">
                 <div class="player-name-row">
-                  <span class="seq-tag">{{ p.seq || "-" }}</span>
+                  <span class="seq-tag">{{ p.seq || "旁" }}</span>
                   <span class="player-name" :class="{ dead: p.dead }">
                     {{ p.name }}
                     <span v-if="p.dead" class="dead-suffix">(出局)</span>
@@ -161,7 +161,11 @@
 
                 <!-- 上帝操作下拉：和文字同一水平线 -->
                 <div v-if="isJudge && p.seq" class="player-actions">
-                  <el-dropdown trigger="click" size="mini">
+                  <el-dropdown
+                    v-if="gameData.hasThird"
+                    trigger="click"
+                    size="mini"
+                  >
                     <el-button size="mini" plain type="primary">
                       操作 <i class="el-icon-arrow-down el-icon--right"></i>
                     </el-button>
@@ -177,6 +181,14 @@
                       </el-dropdown-item>
                     </el-dropdown-menu>
                   </el-dropdown>
+                  <el-button
+                    v-else
+                    @click="toggleDead(p.seq)"
+                    size="mini"
+                    :type="p.dead ? 'success' : 'danger'"
+                  >
+                    {{ p.dead ? "设为存活" : "标记出局" }}
+                  </el-button>
                 </div>
 
                 <!-- 普通玩家备注下拉：禁止给自己、禁止给上帝 -->
@@ -201,9 +213,6 @@
                   ></el-option>
                 </el-select>
               </div>
-
-              <!-- 旁观者单独一行小字 -->
-              <div v-if="!p.role" class="player-desc">旁观者</div>
             </div>
 
             <el-button
