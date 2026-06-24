@@ -375,7 +375,7 @@
                 type="primary"
                 size="mini"
                 @click="sendMsg"
-                :loading="sendMsgLoading"
+                :disabled="sendMsgLoading"
               >
                 发布消息
               </el-button>
