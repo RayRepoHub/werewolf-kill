@@ -236,7 +236,7 @@
           <el-input
             v-model="localPlayer.note"
             type="textarea"
-            rows="6"
+            :autosize="{ minRows: 6 }"
             placeholder="请输入"
           />
           <div class="w-full flex-end" style="margin-top: 8px">
@@ -364,7 +364,7 @@
             <el-input
               v-model="judgeMsg"
               type="textarea"
-              rows="6"
+              :autosize="{ minRows: 6 }"
               placeholder="请输入"
             />
             <div class="w-full flex-end" style="margin: 8px 0">
