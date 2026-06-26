@@ -54,9 +54,6 @@
     <!-- 已加入对局：游戏主面板 -->
     <div v-else-if="gameStatus.joined">
       <el-button type="info" @click="refreshAll"> 刷新信息 </el-button>
-      <el-button v-if="isJudge" type="primary" @click="openGodPowerPanel">
-        {{ GOD_NAME }}之力
-      </el-button>
 
       <!-- 普通玩家退出按钮 -->
       <el-button
@@ -159,8 +156,22 @@
                   </span>
                 </div>
 
+                <!-- 上帝本人的操作栏 -->
+                <div
+                  v-if="isJudge && p.uuid === localPlayer.uuid"
+                  class="player-actions"
+                >
+                  <el-button
+                    type="primary"
+                    size="mini"
+                    @click="openGodPowerPanel"
+                  >
+                    {{ GOD_NAME }}之力
+                  </el-button>
+                </div>
+
                 <!-- 上帝操作下拉：和文字同一水平线 -->
-                <div v-if="isJudge && p.seq" class="player-actions">
+                <div v-else-if="isJudge && p.seq" class="player-actions">
                   <el-dropdown
                     v-if="gameData.hasThird"
                     trigger="click"
