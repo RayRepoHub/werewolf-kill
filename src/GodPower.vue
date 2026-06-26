@@ -26,9 +26,23 @@
           </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
-      <el-button type="danger" size="small" @click="clearAllRoles">
-        清空勾选数据
-      </el-button>
+      <!-- 替换为下拉：移除数据 -->
+      <el-dropdown @command="handleRemoveAction" trigger="click">
+        <el-button type="danger" size="small">
+          移除数据 <i class="el-icon-arrow-down el-icon--right"></i>
+        </el-button>
+        <el-dropdown-menu slot="dropdown">
+          <el-dropdown-item command="clearSeq" @click.native.stop
+            >移除勾选玩家序号</el-dropdown-item
+          >
+          <el-dropdown-item command="clearRole" @click.native.stop
+            >移除勾选玩家身份</el-dropdown-item
+          >
+          <el-dropdown-item command="removePlayerBatch" @click.native.stop
+            >移除勾选玩家</el-dropdown-item
+          >
+        </el-dropdown-menu>
+      </el-dropdown>
     </el-header>
 
     <!-- 自定义虚线添加虚拟玩家按钮 -->
@@ -64,14 +78,6 @@
             :disabled="getRemain(role, idx) <= 0"
           />
         </el-select>
-        <!-- 新增单行删除按钮，所有玩家均可删除 -->
-        <el-button
-          size="mini"
-          text
-          type="danger"
-          icon="el-icon-delete"
-          @click="removePlayer(idx)"
-        />
       </div>
     </el-main>
 
@@ -137,11 +143,6 @@ export default {
       this.playerList.push(newItem);
     },
 
-    // 新增方法：删除单条玩家
-    removePlayer(index) {
-      this.playerList.splice(index, 1);
-    },
-
     // 全选/反选切换
     selectAllPlayer() {
       const allChecked = this.playerList.every((item) => item.checked);
@@ -157,6 +158,39 @@ export default {
       }
       if (command === "randomSeq") this.randomSeq(checkedPlayers);
       if (command === "randomRole") this.randomRole(checkedPlayers);
+    },
+
+    // 移除数据下拉统一处理
+    handleRemoveAction(command) {
+      const checkedPlayers = this.playerList.filter((p) => p.checked);
+      if (checkedPlayers.length === 0) {
+        this.$message.warning("请先勾选需要操作的玩家！");
+        return;
+      }
+      if (command === "clearSeq") {
+        checkedPlayers.forEach((p) => (p.seq = null));
+        this.$message.success(`已清空${checkedPlayers.length}名勾选玩家序号`);
+      } else if (command === "clearRole") {
+        checkedPlayers.forEach((p) => (p.role = ""));
+        this.$message.success(`已清空${checkedPlayers.length}名勾选玩家身份`);
+      } else if (command === "removePlayerBatch") {
+        this.$confirm(
+          `确定要彻底移除${checkedPlayers.length}名勾选玩家吗？`,
+          "提示",
+          {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning",
+            showClose: false,
+            customClass: "msg-box",
+          }
+        )
+          .then(() => {
+            this.playerList = this.playerList.filter((p) => !p.checked);
+            this.$message.success("已移除勾选玩家");
+          })
+          .catch(() => {});
+      }
     },
 
     // 随机分配序号：仅勾选玩家从1开始编号，未勾选全部清空序号
@@ -232,36 +266,6 @@ export default {
         [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
       }
       return newArr;
-    },
-
-    // 仅清空勾选玩家的序号和身份
-    clearAllRoles() {
-      const checkedPlayers = this.playerList.filter((p) => p.checked);
-      if (checkedPlayers.length === 0) {
-        this.$message.warning("请先勾选需要清空的玩家！");
-        return;
-      }
-      this.$confirm(
-        `确定要清空${checkedPlayers.length}名勾选玩家的序号和身份吗？`,
-        "提示",
-        {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-          showClose: false,
-          customClass: "msg-box",
-        }
-      )
-        .then(() => {
-          checkedPlayers.forEach((p) => {
-            p.role = "";
-            p.seq = null;
-          });
-          this.$message.success("已清空勾选玩家序号和身份数据");
-        })
-        .catch(() => {
-          // 取消操作
-        });
     },
 
     // 计算身份剩余可用数量（排除当前行自身）
