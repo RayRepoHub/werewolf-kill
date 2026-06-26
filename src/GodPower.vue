@@ -9,7 +9,7 @@
     :close-on-click-modal="false"
     class="full-screen-dialog"
   >
-    <el-header class="tool-bar flex-end" height="60px">
+    <el-header class="tool-bar flex-end" height="48px">
       <el-button type="warning" size="small" @click="selectAllPlayer">
         全选/反选
       </el-button>
@@ -26,17 +26,19 @@
           </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
-      <el-button
-        type="danger"
-        size="small"
-        icon="el-icon-delete"
-        @click="clearAllRoles"
-      >
+      <el-button type="danger" size="small" @click="clearAllRoles">
         清空勾选数据
       </el-button>
     </el-header>
 
-    <el-main style="padding: 0; height: calc(100% - 60px)">
+    <!-- 自定义虚线添加虚拟玩家按钮 -->
+    <div class="add-fake-box">
+      <div class="custom-dash-btn" @click="addFakePlayer">
+        <i class="el-icon-plus"></i> 添加虚拟玩家
+      </div>
+    </div>
+
+    <el-main style="padding: 0; height: calc(100% - 100px)">
       <div v-for="(p, idx) in playerList" :key="idx" class="player-item">
         <!-- 新增复选框 -->
         <el-checkbox v-model="p.checked" size="mini"></el-checkbox>
@@ -62,6 +64,14 @@
             :disabled="getRemain(role, idx) <= 0"
           />
         </el-select>
+        <!-- 新增单行删除按钮，所有玩家均可删除 -->
+        <el-button
+          size="mini"
+          text
+          type="danger"
+          icon="el-icon-delete"
+          @click="removePlayer(idx)"
+        />
       </div>
     </el-main>
 
@@ -108,6 +118,28 @@ export default {
   methods: {
     handleClose() {
       this.$emit("update:visible", false);
+    },
+
+    // 新增方法：添加虚拟玩家，自动命名虚拟玩家1、2、3...
+    addFakePlayer() {
+      const fakeCount = this.playerList.filter((item) =>
+        item.name.startsWith("虚拟玩家")
+      ).length;
+      const newItem = {
+        uuid: String(Date.now()),
+        name: `虚拟玩家${fakeCount + 1}`,
+        role: "",
+        seq: null,
+        dead: false,
+        thirdMark: "",
+        checked: false,
+      };
+      this.playerList.push(newItem);
+    },
+
+    // 新增方法：删除单条玩家
+    removePlayer(index) {
+      this.playerList.splice(index, 1);
     },
 
     // 全选/反选切换
@@ -281,6 +313,30 @@ export default {
 .tool-bar {
   gap: 8px;
   padding: 0;
+}
+/* 自定义虚线按钮容器 */
+.add-fake-box {
+  margin-bottom: 8px;
+}
+/* 自定义100%宽度虚线按钮 白底灰字 */
+.custom-dash-btn {
+  width: 100%;
+  padding: 12px 0;
+  text-align: center;
+  border: 1px dashed #c0c4cc;
+  background: #ffffff;
+  color: #606266;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.custom-dash-btn:hover {
+  border-color: #909399;
+  background: #fafafa;
+}
+.custom-dash-btn i {
+  margin-right: 6px;
 }
 .player-item {
   display: flex;

@@ -609,13 +609,6 @@ export default {
         });
     },
     async openGodPowerPanel() {
-      // 过滤掉上帝自己，判断是否存在其他玩家
-      const otherPlayers = this.players.filter((p) => p.role !== this.GOD_NAME);
-      if (otherPlayers.length === 0) {
-        this.$message.warning("当前暂无其他玩家，无法分配身份");
-        return;
-      }
-      // 有其他玩家才打开弹窗
       this.godPowerVisible = true;
     },
     /**
