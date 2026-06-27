@@ -57,7 +57,12 @@
       ref="playerScrollWrap"
       style="padding: 0; height: calc(100% - 100px)"
     >
-      <div v-for="(p, idx) in playerList" :key="idx" class="player-item">
+      <div
+        v-for="(p, idx) in playerList"
+        :key="idx"
+        class="player-item"
+        :class="{ 'new-flash': p.isNew }"
+      >
         <!-- 新增复选框 -->
         <el-checkbox v-model="p.checked" size="mini"></el-checkbox>
         <div class="player-name" :title="p.name">{{ p.name }}</div>
@@ -109,7 +114,12 @@ export default {
       loading: false,
       playerList: [],
       GOD_NAME: GOD_NAME,
+      flashTimer: null, // 保存上一条闪烁定时器
     };
+  },
+  beforeDestroy() {
+    // 组件销毁清除定时器，防止残留
+    if (this.flashTimer) clearTimeout(this.flashTimer);
   },
   watch: {
     visible(val) {
@@ -120,6 +130,7 @@ export default {
           .map((item) => ({
             ...item,
             checked: false,
+            isNew: false,
           }));
         this.playerList = list;
       }
@@ -132,6 +143,13 @@ export default {
 
     // 新增方法：添加虚拟玩家，自动命名虚拟玩家1、2、3...
     addFakePlayer() {
+      // 1. 存在上一条闪烁，立刻停止
+      if (this.flashTimer) {
+        clearTimeout(this.flashTimer);
+        // 找到所有正在闪烁的条目，取消高亮
+        this.playerList.forEach((item) => (item.isNew = false));
+      }
+
       const fakeCount = this.playerList.filter((item) =>
         item.name.startsWith("虚拟玩家")
       ).length;
@@ -143,16 +161,23 @@ export default {
         dead: false,
         thirdMark: "",
         checked: false,
+        isNew: true, // 标记当前最新条目闪烁
       };
       this.playerList.push(newItem);
 
-      // 新增：DOM更新后滚动容器到底部
+      // DOM更新后滚动容器到底部
       this.$nextTick(() => {
         const wrap = this.$refs.playerScrollWrap.$el;
         if (wrap) {
           wrap.scrollTop = wrap.scrollHeight;
         }
       });
+
+      // 2秒后关闭当前这条闪烁
+      this.flashTimer = setTimeout(() => {
+        newItem.isNew = false;
+        this.flashTimer = null;
+      }, 2000);
     },
 
     // 全选/反选切换
@@ -360,6 +385,24 @@ export default {
   gap: 8px;
   margin-bottom: 12px;
   flex-wrap: wrap;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+/* 淡蓝色闪烁动画 */
+@keyframes flashBlue {
+  0% {
+    background: transparent;
+  }
+  50% {
+    background: #e6f4ff;
+  }
+  100% {
+    background: transparent;
+  }
+}
+.new-flash {
+  animation: flashBlue 0.6s ease-in-out infinite;
 }
 .el-checkbox {
   flex: 0 0 40px;
