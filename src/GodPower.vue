@@ -65,7 +65,16 @@
       >
         <!-- 新增复选框 -->
         <el-checkbox v-model="p.checked" size="mini"></el-checkbox>
-        <div class="player-name" :title="p.name">{{ p.name }}</div>
+        <div class="player-name" :title="p.name">
+          {{ p.name }}
+          <!-- 仅虚拟玩家显示编辑图标 -->
+          <svg-icon
+            v-if="p.isVirtual"
+            icon-class="edit"
+            class="edit-name-icon"
+            @click.native="editPlayerName(p)"
+          ></svg-icon>
+        </div>
         <el-input-number
           v-model="playerList[idx].seq"
           size="mini"
@@ -131,6 +140,7 @@ export default {
             ...item,
             checked: false,
             isNew: false,
+            isVirtual: item.isVirtual,
           }));
         this.playerList = list;
       }
@@ -139,6 +149,25 @@ export default {
   methods: {
     handleClose() {
       this.$emit("update:visible", false);
+    },
+
+    // 新增方法：编辑虚拟玩家名称
+    editPlayerName(item) {
+      this.$prompt("请输入玩家名称", "修改名称", {
+        inputValue: item.name,
+        customClass: "msg-box",
+        showClose: false,
+        inputValidator: (value) => {
+          if (!value.trim()) {
+            return "名称不能为空";
+          }
+          return true;
+        },
+      })
+        .then(({ value }) => {
+          item.name = value.trim();
+        })
+        .catch(() => {});
     },
 
     // 新增方法：添加虚拟玩家，自动命名虚拟玩家1、2、3...
@@ -162,6 +191,7 @@ export default {
         thirdMark: "",
         checked: false,
         isNew: true, // 标记当前最新条目闪烁
+        isVirtual: true, // 虚拟玩家专属标识
       };
       this.playerList.push(newItem);
 
@@ -413,6 +443,14 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+/* 编辑图标样式 */
+.edit-name-icon {
+  font-size: 14px;
+  cursor: pointer;
 }
 .seq-input {
   flex: 1;
