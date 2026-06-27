@@ -52,7 +52,11 @@
       </div>
     </div>
 
-    <el-main style="padding: 0; height: calc(100% - 100px)">
+    <!-- 绑定ref用于滚动 -->
+    <el-main
+      ref="playerScrollWrap"
+      style="padding: 0; height: calc(100% - 100px)"
+    >
       <div v-for="(p, idx) in playerList" :key="idx" class="player-item">
         <!-- 新增复选框 -->
         <el-checkbox v-model="p.checked" size="mini"></el-checkbox>
@@ -141,6 +145,14 @@ export default {
         checked: false,
       };
       this.playerList.push(newItem);
+
+      // 新增：DOM更新后滚动容器到底部
+      this.$nextTick(() => {
+        const wrap = this.$refs.playerScrollWrap.$el;
+        if (wrap) {
+          wrap.scrollTop = wrap.scrollHeight;
+        }
+      });
     },
 
     // 全选/反选切换
