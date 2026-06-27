@@ -66,7 +66,8 @@
         <!-- 新增复选框 -->
         <el-checkbox v-model="p.checked" size="mini"></el-checkbox>
         <div class="player-name" :title="p.name">
-          {{ p.name }}
+          <!-- 文字单独容器，超出省略 -->
+          <span class="name-text">{{ p.name }}</span>
           <!-- 仅虚拟玩家显示编辑图标 -->
           <svg-icon
             v-if="p.isVirtual"
@@ -447,8 +448,16 @@ export default {
   align-items: center;
   gap: 4px;
 }
+/* 文字单行省略，自动压缩 */
+.name-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 /* 编辑图标样式 */
 .edit-name-icon {
+  flex: 0 0 auto;
   font-size: 14px;
   cursor: pointer;
 }
