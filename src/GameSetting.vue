@@ -118,15 +118,20 @@ export default {
       roleList: [],
       editDialog: false,
       editIndex: -1, // -1 = 新增，>=0 = 编辑
-      editForm: { name: "", desc: "", enabled: true, skills: [] },
+      // 仅新增 roleId 字段，其余原样不动
+      editForm: { roleId: "", name: "", desc: "", enabled: true, skills: [] },
     };
   },
   created() {
-    // 深拷贝后统一遍历，给每一条角色强制补充skills空数组，杜绝undefined
+    // 深拷贝后统一遍历，给每一条角色强制补充skills空数组、自动生成唯一roleId
     const rawList = JSON.parse(JSON.stringify(this.initialRoles));
     this.roleList = rawList.map((item) => {
       return {
         skills: [],
+        // 旧数据无roleId自动生成唯一ID，原有字段全部保留
+        roleId:
+          item.roleId ||
+          "role_" + Date.now() + Math.random().toString(36).slice(2),
         ...item,
       };
     });
@@ -136,10 +141,16 @@ export default {
     openDialog(index = -1) {
       this.editIndex = index;
       if (index === -1) {
-        // 新增：清空表单
-        this.editForm = { name: "", desc: "", enabled: true, skills: [] };
+        // 新增：自动生成唯一id，其余默认值不变
+        this.editForm = {
+          roleId: "role_" + Date.now() + Math.random().toString(36).slice(2),
+          name: "",
+          desc: "",
+          enabled: true,
+          skills: [],
+        };
       } else {
-        // 编辑：赋值表单
+        // 编辑：赋值表单，完整保留原有roleId
         this.editForm = { ...this.roleList[index] };
       }
       this.editDialog = true;

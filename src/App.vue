@@ -96,6 +96,26 @@
             >
               {{ getRoleDesc(localPlayer.role) }}
             </div>
+            <div
+              style="
+                font-size: 14px;
+                color: #1890ff;
+                margin-top: 4px;
+                font-weight: normal;
+              "
+            >
+              发动技能：
+              <span v-if="!localPlayer.skills?.length">无技能</span>
+              <span v-else class="cursor-pointer" @click="onClickSkill">
+                {{
+                  localPlayer.skills
+                    .map((key) => ONE_NIGHT_SKILL_MAP?.[key]?.label)
+                    .filter(Boolean)
+                    .join("、")
+                }}
+                <svg-icon icon-class="click-skill" />
+              </span>
+            </div>
           </div>
           <div
             v-if="!isJudge && !localPlayer.role && gameData.enableGodPower"
@@ -453,6 +473,14 @@
       :visible.sync="switchServerVisible"
       @change="onServerChange"
     />
+
+    <!-- 技能弹窗 -->
+    <SkillDialog
+      :visible.sync="skillDialogVisible"
+      :skillKey="currentSkillKey"
+      :allPlayers="players"
+      @confirm-skill="onSkillConsumed"
+    />
   </div>
 </template>
 
@@ -462,7 +490,13 @@ import GameSetting from "@/GameSetting.vue";
 import GodPower from "@/GodPower.vue";
 import SwitchServer from "@/SwitchServer.vue";
 import CreateGameDialog from "@/CreateGameDialog.vue";
-import { ADMIN_PASSWORD, GOD_NAME, API_SERVERS } from "@/const.js";
+import SkillDialog from "@/SkillDialog.vue";
+import {
+  ADMIN_PASSWORD,
+  GOD_NAME,
+  API_SERVERS,
+  ONE_NIGHT_SKILL_MAP,
+} from "@/const.js";
 
 export default {
   name: "WerewolfGame",
@@ -471,6 +505,7 @@ export default {
     GodPower,
     SwitchServer,
     CreateGameDialog,
+    SkillDialog,
   },
 
   data() {
@@ -478,6 +513,7 @@ export default {
       // 全局常量映射到模板
       GOD_NAME,
       ADMIN_PASSWORD,
+      ONE_NIGHT_SKILL_MAP,
 
       tempName: "", // 临时编辑昵称
       localPlayer: {}, // 当前本地玩家信息
@@ -525,6 +561,10 @@ export default {
       switchServerVisible: false, // 切换服务弹窗
       localReadMsgId: "",
       drawRoleLoading: false, // 抽身份加载锁，防止并发重复请求
+
+      skillDialogVisible: false,
+      currentSkillKey: "",
+      skillUsed: false,
     };
   },
 
@@ -571,6 +611,22 @@ export default {
   },
 
   methods: {
+    onSkillConsumed() {
+      this.skillUsed = true;
+    },
+    onClickSkill() {
+      // 技能已使用，直接拦截无弹窗
+      if (this.skillUsed) {
+        this.$message.info("本局该技能已经使用，无法再次释放");
+        return;
+      }
+      // 无技能直接返回
+      if (!this.localPlayer.skills || this.localPlayer.skills.length === 0)
+        return;
+      // 取当前玩家第一个技能
+      this.currentSkillKey = this.localPlayer.skills[0];
+      this.skillDialogVisible = true;
+    },
     /**
      * 清空上帝广播输入框内容
      */
@@ -657,10 +713,21 @@ export default {
      */
     async handleGodSave(newPlayers) {
       const god = this.players.find((p) => p.role === this.GOD_NAME);
+      // 给分配的玩家补充roleId、skills
+      newPlayers = newPlayers.map((player) => {
+        if (!player.role || player.role === this.GOD_NAME) return player;
+        const cfg = this.roleConfigList.find((r) => r.name === player.role);
+        return {
+          ...player,
+          roleId: cfg?.roleId || "",
+          skills: cfg?.skills || [],
+        };
+      });
       this.gameData.players = [god, ...newPlayers];
       await this.saveGame();
       this.refreshAll();
       this.$message.success(`${this.GOD_NAME}之力已生效！`);
+      this.skillUsed = false;
     },
 
     /**
@@ -826,6 +893,14 @@ export default {
      * 根据身份名称获取身份描述
      */
     getRoleDesc(roleName) {
+      // 优先使用唯一roleId匹配，不会重名冲突
+      if (this.localPlayer.roleId) {
+        const role = this.roleConfigList.find(
+          (item) => item.roleId === this.localPlayer.roleId
+        );
+        if (role) return role.desc;
+      }
+      // 旧数据兜底兼容
       const role = this.roleConfigList.find((item) => item.name === roleName);
       return role ? role.desc : "暂无描述";
     },
@@ -874,16 +949,21 @@ export default {
         if (!this.localPlayer.uuid) {
           this.localPlayer.uuid = this.generateUUID();
         }
+        // 兜底技能、身份id字段
+        if (!this.localPlayer.roleId) this.localPlayer.roleId = "";
+        if (!this.localPlayer.skills) this.localPlayer.skills = [];
       } else {
         // 初始化本地玩家信息
         this.localPlayer = {
           uuid: this.generateUUID(),
           name: "",
+          roleId: "",
           role: "",
           seq: 0,
           dead: false,
           note: "",
           thirdMark: "",
+          skills: [],
         };
       }
       this.saveLocal();
@@ -1171,7 +1251,14 @@ export default {
         // 本地随机抽取一张身份
         const randomIndex = Math.floor(Math.random() * fullDeck.length);
         const pickRole = fullDeck[randomIndex];
+        // 通过名称匹配完整身份配置，拿到唯一id与技能数组
+        const targetRoleConfig = this.roleConfigList.find(
+          (r) => r.name === pickRole
+        );
         me.role = pickRole;
+        // 存入身份ID、技能列表
+        me.roleId = targetRoleConfig?.roleId || "";
+        me.skills = targetRoleConfig?.skills || [];
         me.seq = seq;
 
         // 更新本地玩家缓存并持久化到localStorage
@@ -1195,6 +1282,7 @@ export default {
         // 无论成功失败，都释放加载锁，恢复按钮可用
         this.drawRoleLoading = false;
       }
+      this.skillUsed = false;
     },
 
     /**
@@ -1310,6 +1398,7 @@ export default {
           this.endLoading = false;
           this.$message.success("已成功结束本局");
           this.refreshAll();
+          this.skillUsed = false;
         })
         .catch(() => {});
     },
