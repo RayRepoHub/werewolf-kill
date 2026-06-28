@@ -173,7 +173,7 @@
                 <!-- 上帝操作下拉：和文字同一水平线 -->
                 <div v-else-if="isJudge && p.seq" class="player-actions">
                   <el-dropdown
-                    v-if="gameData.hasThird"
+                    v-if="showExtraPlayerOps"
                     trigger="click"
                     size="mini"
                   >
@@ -542,6 +542,16 @@ export default {
         .padStart(2, "0");
       const centiseconds = (ms % 100).toString().padStart(2, "0");
       return `${minutes}:${seconds}.${centiseconds}`;
+    },
+    /**
+     * 是否展示玩家额外操作下拉菜单
+     */
+    showExtraPlayerOps() {
+      if (this.gameData.hasThird) {
+        return true;
+      } else {
+        return false;
+      }
     },
   },
 
