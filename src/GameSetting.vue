@@ -14,20 +14,33 @@
       </el-button>
     </el-header>
     <el-main style="padding: 0; height: calc(100% - 60px)">
-      <div v-for="(role, index) in roleList" :key="index" class="role-info">
+      <div v-for="(role, index) in roleList" :key="index">
         <div style="margin-bottom: 20px">
           <div>
             <b>{{ role.name }}</b>
             （{{ role.desc }}）
           </div>
+          <!-- 新增：展示当前身份绑定的技能 -->
+          <div style="font-size: 13px; color: #666; margin-top: 6px">
+            绑定技能：
+            <span v-if="!role.skills?.length">无</span>
+            <span v-else>
+              {{
+                role.skills
+                  .map((key) => ONE_NIGHT_SKILL_MAP[key]?.label)
+                  .filter(Boolean)
+                  .join("、")
+              }}
+            </span>
+          </div>
         </div>
-        <div style="display: flex; justify-content: space-between">
+        <div class="flex-between">
           <el-switch
             v-model="role.enabled"
             active-text="显示"
             inactive-text="隐藏"
           />
-          <div style="display: flex">
+          <div style="display: flex; gap: 8px">
             <el-button type="success" size="mini" @click="openDialog(index)">
               编辑
             </el-button>
@@ -61,6 +74,30 @@
           >
           </el-input>
         </el-form-item>
+        <!-- 技能多选：修复移动端溢出el-select -->
+        <el-form-item label="绑定技能">
+          <el-select
+            v-model="editForm.skills"
+            multiple
+            placeholder="请选择该身份拥有的技能"
+            style="width: 100%"
+            popper-append-to-body="false"
+            popper-class="skill-select-popper"
+            popup-placement="bottom-start"
+          >
+            <el-option
+              v-for="skill in ONE_NIGHT_SKILL_LIST"
+              :key="skill.skillKey"
+              :label="skill.label"
+              :value="skill.skillKey"
+            >
+              <span>{{ skill.label }}</span>
+              <span style="color: #999; font-size: 12px; margin-left: 8px">{{
+                skill.desc
+              }}</span>
+            </el-option>
+          </el-select>
+        </el-form-item>
       </el-form>
       <div slot="footer">
         <el-button @click="editDialog = false">取 消</el-button>
@@ -71,18 +108,28 @@
 </template>
 
 <script>
+import { ONE_NIGHT_SKILL_MAP, ONE_NIGHT_SKILL_LIST } from "@/const.js";
 export default {
   props: ["initialRoles"],
   data() {
     return {
+      ONE_NIGHT_SKILL_MAP,
+      ONE_NIGHT_SKILL_LIST,
       roleList: [],
       editDialog: false,
       editIndex: -1, // -1 = 新增，>=0 = 编辑
-      editForm: { name: "", desc: "", enabled: true },
+      editForm: { name: "", desc: "", enabled: true, skills: [] },
     };
   },
   created() {
-    this.roleList = JSON.parse(JSON.stringify(this.initialRoles));
+    // 深拷贝后统一遍历，给每一条角色强制补充skills空数组，杜绝undefined
+    const rawList = JSON.parse(JSON.stringify(this.initialRoles));
+    this.roleList = rawList.map((item) => {
+      return {
+        skills: [],
+        ...item,
+      };
+    });
   },
   methods: {
     // 统一打开弹窗（新增/编辑都走这里）
@@ -90,7 +137,7 @@ export default {
       this.editIndex = index;
       if (index === -1) {
         // 新增：清空表单
-        this.editForm = { name: "", desc: "", enabled: true };
+        this.editForm = { name: "", desc: "", enabled: true, skills: [] };
       } else {
         // 编辑：赋值表单
         this.editForm = { ...this.roleList[index] };
@@ -132,7 +179,13 @@ export default {
   },
 };
 </script>
-<style scoped>
-.role-info {
+<style>
+.skill-select-popper {
+  max-width: 100% !important;
+}
+.skill-select-popper .el-select-dropdown__item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
