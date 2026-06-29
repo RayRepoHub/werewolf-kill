@@ -32,6 +32,12 @@
                   .join("、")
               }}
             </span>
+            <span
+              style="margin-left: 10px; color: #f5222d"
+              v-if="role.singleSkill"
+            >
+              【互斥：本局仅可发动一个】
+            </span>
           </div>
         </div>
         <div class="flex-between">
@@ -61,7 +67,7 @@
       :fullscreen="true"
       append-to-body
     >
-      <el-form label-width="80px">
+      <el-form label-width="120px">
         <el-form-item label="名称">
           <el-input v-model="editForm.name" placeholder="请输入身份名称" />
         </el-form-item>
@@ -98,6 +104,17 @@
             </el-option>
           </el-select>
         </el-form-item>
+        <!-- 新增：技能互斥单选控制 -->
+        <el-form-item label="技能互斥限制">
+          <el-switch
+            v-model="editForm.singleSkill"
+            active-text="仅能发动一个"
+            inactive-text="可全部分别发动"
+          />
+          <div style="font-size: 12px; color: #999; margin-top: 4px">
+            开启后，该身份本局只能使用其中任意一个技能，使用后全部锁定
+          </div>
+        </el-form-item>
       </el-form>
       <div slot="footer">
         <el-button @click="editDialog = false">取 消</el-button>
@@ -118,8 +135,15 @@ export default {
       roleList: [],
       editDialog: false,
       editIndex: -1, // -1 = 新增，>=0 = 编辑
-      // 仅新增 roleId 字段，其余原样不动
-      editForm: { roleId: "", name: "", desc: "", enabled: true, skills: [] },
+      // 仅新增 roleId、singleSkill 字段，其余原样不动
+      editForm: {
+        roleId: "",
+        name: "",
+        desc: "",
+        enabled: true,
+        skills: [],
+        singleSkill: false,
+      },
     };
   },
   created() {
@@ -128,6 +152,7 @@ export default {
     this.roleList = rawList.map((item) => {
       return {
         skills: [],
+        singleSkill: item.singleSkill ?? false,
         // 旧数据无roleId自动生成唯一ID，原有字段全部保留
         roleId:
           item.roleId ||
@@ -148,6 +173,7 @@ export default {
           desc: "",
           enabled: true,
           skills: [],
+          singleSkill: false,
         };
       } else {
         // 编辑：赋值表单，完整保留原有roleId

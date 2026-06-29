@@ -466,6 +466,8 @@
       :skillKey="currentSkillKey"
       :allPlayers="players"
       :gameRoles="gameRoles"
+      :allRoleConfig="roleConfigList"
+      :targetPlayer="localPlayer"
       @confirm-skill="onSkillConsumed"
     />
   </div>

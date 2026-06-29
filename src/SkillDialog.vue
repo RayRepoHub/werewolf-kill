@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-06-29 20:06:20
+ * @LastEditTime: 2026-06-29 22:22:40
  * @Description: 请输入
 -->
 <template>
@@ -16,8 +16,20 @@
     :close-on-click-modal="false"
     class="full-screen-dialog"
   >
+    <!-- 互斥身份：先选择要使用的技能 -->
+    <div v-if="needSelectSkill">
+      <p style="margin-bottom: 16px">
+        该身份技能互斥，本局仅可使用其中一项，请选择要发动的技能
+      </p>
+      <el-radio-group v-model="selectSkillKey">
+        <el-radio v-for="sk in selfSkillList" :key="sk" :label="sk">
+          {{ ONE_NIGHT_SKILL_MAP[sk]?.label }}
+        </el-radio>
+      </el-radio-group>
+    </div>
+
     <!-- 查验一名玩家 -->
-    <div v-if="skillKey === 'see_one_player'">
+    <div v-else-if="currentSkillKey === 'see_one_player'">
       <p style="margin-bottom: 12px">请输入你要查验的玩家序号</p>
       <el-input
         v-model="checkSeq"
@@ -27,7 +39,7 @@
     </div>
 
     <!-- 查看两张底牌（未分配出去的身份） -->
-    <div v-else-if="skillKey === 'see_two_center'">
+    <div v-else-if="currentSkillKey === 'see_two_center'">
       <p style="margin-bottom: 12px">
         本局剩余未抽取底牌如下（自动展示最多2张）
       </p>
@@ -43,13 +55,26 @@
     </div>
 
     <div slot="footer" class="dialog-footer">
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleConfirm">确认</el-button>
+      <div class="flex-end" v-if="!needSelectSkill">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="handleConfirm">确认</el-button>
+      </div>
+      <div class="flex-end" v-if="needSelectSkill">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button
+          type="primary"
+          @click="confirmSelectSkill"
+          :disabled="!selectSkillKey"
+        >
+          确认
+        </el-button>
+      </div>
     </div>
   </el-dialog>
 </template>
 
 <script>
+import { ONE_NIGHT_SKILL_MAP } from "@/const.js";
 export default {
   name: "SkillDialog",
   props: {
@@ -61,6 +86,11 @@ export default {
       type: String,
       default: "",
     },
+    // 当前玩家完整信息
+    targetPlayer: {
+      type: Object,
+      default: () => ({}),
+    },
     // 所有玩家完整列表，用来查身份
     allPlayers: {
       type: Array,
@@ -71,11 +101,52 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    // 全局全部身份配置列表
+    allRoleConfig: {
+      type: Array,
+      default: () => [],
+    },
   },
   data() {
     return {
+      ONE_NIGHT_SKILL_MAP,
       checkSeq: "",
+      // 互斥技能选择临时变量
+      needSelectSkill: false,
+      selectSkillKey: "",
+      selfSkillList: [],
+      currentSkillKey: "",
     };
+  },
+  watch: {
+    visible(val) {
+      if (val) {
+        // 弹窗打开初始化
+        this.checkSeq = "";
+        this.needSelectSkill = false;
+        this.selectSkillKey = "";
+        this.selfSkillList = [];
+        this.currentSkillKey = "";
+
+        // 1. 获取当前玩家身份配置
+        const playerRole = this.targetPlayer.role;
+        const roleInfo = this.allRoleConfig.find(
+          (item) => item.name === playerRole
+        );
+        if (!roleInfo) {
+          this.currentSkillKey = this.skillKey;
+          return;
+        }
+        // 2. 判断是否互斥多技能
+        if (roleInfo.singleSkill && roleInfo.skills.length > 1) {
+          this.needSelectSkill = true;
+          this.selfSkillList = [...roleInfo.skills];
+        } else {
+          // 非互斥/单技能，直接进入原面板
+          this.currentSkillKey = this.skillKey;
+        }
+      }
+    },
   },
   computed: {
     // 计算：未分配给玩家的剩余底牌
@@ -107,10 +178,19 @@ export default {
     // 取消：仅关闭弹窗，不消耗技能次数
     handleClose() {
       this.checkSeq = "";
+      this.needSelectSkill = false;
+      this.selectSkillKey = "";
+      this.selfSkillList = [];
+      this.currentSkillKey = "";
       this.$emit("update:visible", false);
     },
+    // 确认选择互斥技能，切换到对应技能面板
+    confirmSelectSkill() {
+      this.currentSkillKey = this.selectSkillKey;
+      this.needSelectSkill = false;
+    },
     handleConfirm() {
-      const key = this.skillKey;
+      const key = this.currentSkillKey;
       let isValid = true;
 
       if (key === "see_one_player") {
