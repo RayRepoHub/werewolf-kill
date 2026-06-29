@@ -465,6 +465,7 @@
       :visible.sync="skillDialogVisible"
       :skillKey="currentSkillKey"
       :allPlayers="players"
+      :gameRoles="gameRoles"
       @confirm-skill="onSkillConsumed"
     />
   </div>

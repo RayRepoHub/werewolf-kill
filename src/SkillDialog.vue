@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-06-28 22:59:54
+ * @LastEditTime: 2026-06-29 20:06:20
  * @Description: 请输入
 -->
 <template>
@@ -16,6 +16,7 @@
     :close-on-click-modal="false"
     class="full-screen-dialog"
   >
+    <!-- 查验一名玩家 -->
     <div v-if="skillKey === 'see_one_player'">
       <p style="margin-bottom: 12px">请输入你要查验的玩家序号</p>
       <el-input
@@ -24,10 +25,23 @@
         type="number"
       ></el-input>
     </div>
+
+    <!-- 查看两张底牌（未分配出去的身份） -->
+    <div v-else-if="skillKey === 'see_two_center'">
+      <p style="margin-bottom: 12px">
+        本局剩余未抽取底牌如下（自动展示最多2张）
+      </p>
+      <div v-if="centerRoleList.length > 0" class="center-role-box">
+        <div v-for="r in centerRoleList" :key="r" class="role-item">？</div>
+      </div>
+      <div v-else>暂无剩余底牌</div>
+    </div>
+
     <!-- 后续其他技能在这里扩展 -->
     <div v-else>
       <p>该技能暂无交互弹窗</p>
     </div>
+
     <div slot="footer" class="dialog-footer">
       <el-button @click="handleClose">取消</el-button>
       <el-button type="primary" @click="handleConfirm">确认</el-button>
@@ -52,11 +66,42 @@ export default {
       type: Array,
       default: () => [],
     },
+    // 全局身份配置（父组件传入 gameRoles）
+    gameRoles: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   data() {
     return {
       checkSeq: "",
     };
+  },
+  computed: {
+    // 计算：未分配给玩家的剩余底牌
+    centerRoleList() {
+      // 1. 生成本局全部身份池
+      let fullPool = [];
+      for (const [role, maxNum] of Object.entries(this.gameRoles)) {
+        for (let i = 0; i < maxNum; i++) {
+          fullPool.push(role);
+        }
+      }
+
+      // 2. 取出所有已分配给玩家的身份
+      const usedRoles = this.allPlayers
+        .filter((p) => p.role && p.role !== "")
+        .map((p) => p.role);
+
+      // 3. 从总池移除已使用身份，得到剩余底牌
+      usedRoles.forEach((role) => {
+        const idx = fullPool.indexOf(role);
+        if (idx > -1) fullPool.splice(idx, 1);
+      });
+
+      // 4. 最多返回2张底牌
+      return fullPool.slice(0, 2);
+    },
   },
   methods: {
     // 取消：仅关闭弹窗，不消耗技能次数
@@ -86,6 +131,22 @@ export default {
             });
           }
         }
+      } else if (key === "see_two_center") {
+        // 底牌查看不需要输入内容，直接展示结果弹窗
+        const list = this.centerRoleList;
+        let tipText = "";
+        if (list.length === 0) {
+          tipText = "本局没有剩余底牌";
+        } else if (list.length === 1) {
+          tipText = `剩余底牌：${list[0]}`;
+        } else {
+          tipText = `两张底牌分别为：${list[0]}、${list[1]}`;
+        }
+        this.$alert(tipText, "底牌查验结果", {
+          confirmButtonText: "知道了",
+          customClass: "msg-box",
+          showClose: false,
+        });
       }
 
       // 输入不合法，不关闭弹窗、不消耗技能
@@ -98,3 +159,16 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.center-role-box {
+  display: flex;
+  gap: 12px;
+}
+.role-item {
+  padding: 8px 16px;
+  background: #e6f4ff;
+  border-radius: 6px;
+  font-size: 16px;
+}
+</style>
