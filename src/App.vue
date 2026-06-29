@@ -86,27 +86,12 @@
             {{ localPlayer.seq }} - {{ localPlayer.role }}({{
               localPlayer.name
             }})
-            <div
-              style="
-                font-size: 14px;
-                color: #666;
-                margin-top: 4px;
-                font-weight: normal;
-              "
-            >
+            <div class="my-role-desc">
               {{ getRoleDesc(localPlayer.role) }}
             </div>
-            <div
-              style="
-                font-size: 14px;
-                color: #1890ff;
-                margin-top: 4px;
-                font-weight: normal;
-              "
-            >
+            <div class="my-skill-info" v-if="localPlayer.skills?.length">
               发动技能：
-              <span v-if="!localPlayer.skills?.length">无技能</span>
-              <span v-else class="cursor-pointer" @click="onClickSkill">
+              <span class="cursor-pointer" @click="onClickSkill">
                 {{
                   localPlayer.skills
                     .map((key) => ONE_NIGHT_SKILL_MAP?.[key]?.label)
@@ -114,6 +99,7 @@
                     .join("、")
                 }}
                 <svg-icon icon-class="click-skill" />
+                <span v-if="localPlayer.skillUsed">(已使用)</span>
               </span>
             </div>
           </div>
@@ -612,7 +598,14 @@ export default {
 
   methods: {
     onSkillConsumed() {
+      // 找到云端自己的玩家对象
+      const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
+      if (me) {
+        me.skillUsed = true;
+      }
       this.skillUsed = true;
+      // 同步到后端
+      this.saveGame();
     },
     onClickSkill() {
       // 技能已使用，直接拦截无弹窗
@@ -727,7 +720,6 @@ export default {
       await this.saveGame();
       this.refreshAll();
       this.$message.success(`${this.GOD_NAME}之力已生效！`);
-      this.skillUsed = false;
     },
 
     /**
@@ -1040,6 +1032,7 @@ export default {
         if (this.gameStatus.exist && me) {
           this.gameStatus.joined = true;
           this.localPlayer = { ...this.localPlayer, ...me };
+          this.skillUsed = !!me.skillUsed;
           this.saveLocal();
         } else {
           // 对局已解散 / 对局存在但自己被移出列表：自动退出对局
@@ -1282,7 +1275,6 @@ export default {
         // 无论成功失败，都释放加载锁，恢复按钮可用
         this.drawRoleLoading = false;
       }
-      this.skillUsed = false;
     },
 
     /**
@@ -1398,7 +1390,6 @@ export default {
           this.endLoading = false;
           this.$message.success("已成功结束本局");
           this.refreshAll();
-          this.skillUsed = false;
         })
         .catch(() => {});
     },
@@ -1496,6 +1487,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.my-skill-info {
+  font-size: 14px;
+  color: #1890ff;
+  margin-top: 4px;
+  font-weight: normal;
+}
+.my-role-desc {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+  font-weight: normal;
+}
 // 页面最外层容器
 .werewolf-game-container {
   max-width: 800px;

@@ -32,15 +32,18 @@
           移除数据 <i class="el-icon-arrow-down el-icon--right"></i>
         </el-button>
         <el-dropdown-menu slot="dropdown">
-          <el-dropdown-item command="clearSeq" @click.native.stop
-            >移除勾选玩家序号</el-dropdown-item
-          >
-          <el-dropdown-item command="clearRole" @click.native.stop
-            >移除勾选玩家身份</el-dropdown-item
-          >
-          <el-dropdown-item command="removePlayerBatch" @click.native.stop
-            >移除勾选玩家</el-dropdown-item
-          >
+          <el-dropdown-item command="clearSeq" @click.native.stop>
+            移除勾选玩家序号
+          </el-dropdown-item>
+          <el-dropdown-item command="clearRole" @click.native.stop>
+            移除勾选玩家身份
+          </el-dropdown-item>
+          <el-dropdown-item command="resetSkillUsed" @click.native.stop>
+            重置勾选玩家技能状态
+          </el-dropdown-item>
+          <el-dropdown-item command="removePlayerBatch" @click.native.stop>
+            移除勾选玩家
+          </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
     </el-header>
@@ -241,6 +244,14 @@ export default {
       } else if (command === "clearRole") {
         checkedPlayers.forEach((p) => (p.role = ""));
         this.$message.success(`已清空${checkedPlayers.length}名勾选玩家身份`);
+      } else if (command === "resetSkillUsed") {
+        // 新增：把勾选玩家 skillUsed 置为 false
+        checkedPlayers.forEach((p) => {
+          p.skillUsed = false;
+        });
+        this.$message.success(
+          `已重置${checkedPlayers.length}名勾选玩家技能使用状态`
+        );
       } else if (command === "removePlayerBatch") {
         this.$confirm(
           `确定要彻底移除${checkedPlayers.length}名勾选玩家吗？`,
