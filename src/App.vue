@@ -99,15 +99,7 @@
                     .join("、")
                 }}
                 <svg-icon icon-class="click-skill" />
-                <span
-                  v-if="
-                    localPlayer.skills.every((k) =>
-                      (localPlayer.usedSkillKeys || []).includes(k)
-                    )
-                  "
-                >
-                  (已全部使用)
-                </span>
+                <span v-if="localPlayer.skillUsed"> (已全部使用) </span>
               </span>
             </div>
           </div>
@@ -617,6 +609,17 @@ export default {
         me.usedSkillKeys.push(selectedSkillKey);
       }
 
+      const roleCfg = this.roleConfigList.find(
+        (r) => r.roleId === this.localPlayer.roleId
+      );
+      if (
+        (roleCfg.singleSkill && me.usedSkillKeys.length > 0) ||
+        (!roleCfg.singleSkill &&
+          me.usedSkillKeys.length === roleCfg.skills.length)
+      ) {
+        me.skillUsed = true;
+      }
+
       this.localPlayer = { ...this.localPlayer, ...me };
       this.saveLocal();
       this.saveGame();
@@ -625,12 +628,13 @@ export default {
       const roleCfg = this.roleConfigList.find(
         (r) => r.name === this.localPlayer.role
       );
+      console.log("🚀 ~ roleCfg:", roleCfg);
       if (!roleCfg || !this.localPlayer.skills?.length) return;
       const usedArr = this.localPlayer.usedSkillKeys || [];
       const availSkillList = this.localPlayer.skills.filter(
         (k) => !usedArr.includes(k)
       );
-      if (availSkillList.length === 0) {
+      if (this.localPlayer.skillUsed) {
         this.$message.info("本局所有技能均已使用完毕");
         return;
       }

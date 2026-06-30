@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-06-30 00:15:33
+ * @LastEditTime: 2026-06-30 18:09:01
  * @Description: 请输入
 -->
 <template>
@@ -16,14 +16,23 @@
     :close-on-click-modal="false"
     class="full-screen-dialog"
   >
-    <!-- 互斥身份：先选择要使用的技能 -->
+    <!-- 互斥身份：先选择要使用的技能，只展示未使用过的技能 -->
     <div v-if="needSelectSkill">
       <p style="margin-bottom: 16px">
-        该身份技能互斥，本局仅可使用其中一项，请选择要发动的技能
+        <span v-if="currentRoleInfo.singleSkill">
+          该身份技能互斥，本局仅可使用其中一项，请选择要发动的技能
+        </span>
+        <span v-else> 该身份有多个技能，请选择要发动的技能 </span>
       </p>
       <el-radio-group v-model="selectSkillKey">
-        <el-radio v-for="sk in showSkillList" :key="sk" :label="sk">
-          {{ ONE_NIGHT_SKILL_MAP[sk]?.label }}
+        <el-radio
+          v-for="skillKey in totalSkillList"
+          :key="skillKey"
+          :label="skillKey"
+          :disabled="usedSkillKeys.includes(skillKey)"
+        >
+          {{ ONE_NIGHT_SKILL_MAP[skillKey]?.label }}
+          <span v-if="usedSkillKeys.includes(skillKey)">(已发动)</span>
         </el-radio>
       </el-radio-group>
     </div>
@@ -44,7 +53,9 @@
         本局剩余未抽取底牌如下（自动展示最多2张）
       </p>
       <div v-if="centerRoleList.length > 0" class="center-role-box">
-        <div v-for="r in centerRoleList" :key="r" class="role-item">？</div>
+        <div v-for="role in centerRoleList" :key="role" class="role-item">
+          ？
+        </div>
       </div>
       <div v-else>暂无剩余底牌</div>
     </div>
@@ -57,14 +68,14 @@
     <div slot="footer" class="dialog-footer">
       <div class="flex-end" v-if="!needSelectSkill">
         <el-button @click="handleClose">取消</el-button>
-        <el-button type="primary" @click="handleConfirm">确认</el-button>
+        <el-button type="primary" @click="handleConfirm">发动技能</el-button>
       </div>
       <div class="flex-end" v-if="needSelectSkill">
         <el-button @click="handleClose">取消</el-button>
         <el-button
           type="primary"
-          @click="confirmSelectSkill"
           :disabled="!selectSkillKey"
+          @click="confirmSelectSkill"
         >
           确认
         </el-button>
@@ -111,95 +122,106 @@ export default {
     return {
       ONE_NIGHT_SKILL_MAP,
       checkSeq: "",
-      // 互斥技能选择临时变量
       needSelectSkill: false,
       selectSkillKey: "",
-      selfSkillList: [],
+      totalSkillList: [],
       currentSkillKey: "",
+      currentRoleInfo: {},
     };
   },
   watch: {
     visible(val) {
       if (val) {
-        // 弹窗打开初始化
+        // 弹窗打开初始化所有临时状态
         this.checkSeq = "";
         this.needSelectSkill = false;
         this.selectSkillKey = "";
-        this.selfSkillList = [];
+        this.totalSkillList = [];
         this.currentSkillKey = "";
 
-        // 1. 获取当前玩家身份配置
-        const playerRole = this.targetPlayer.role;
+        const playerRoleId = this.targetPlayer.roleId;
         const roleInfo = this.allRoleConfig.find(
-          (item) => item.name === playerRole
+          (item) => item.roleId === playerRoleId
         );
         if (!roleInfo) {
           this.currentSkillKey = this.skillKey;
           return;
-        }
-        // 2. 判断是否互斥多技能
-        if (roleInfo.singleSkill && roleInfo.skills.length > 1) {
-          this.needSelectSkill = true;
-          this.selfSkillList = [...roleInfo.skills];
         } else {
-          // 非互斥/单技能，直接进入原面板
+          this.currentRoleInfo = roleInfo;
+        }
+        // 互斥多技能身份，开启选择面板
+        if (roleInfo.skills.length > 1) {
+          this.needSelectSkill = true;
+          this.totalSkillList = [...roleInfo.skills];
+        } else {
           this.currentSkillKey = this.skillKey;
         }
       }
     },
   },
   computed: {
-    showSkillList() {
-      const allSkill = this.selfSkillList;
-      const usedSkill = this.targetPlayer.usedSkillKeys || [];
-      const leaveSkill = allSkill.filter((sk) => !usedSkill.includes(sk));
-      return leaveSkill;
+    /**
+     * 发动过的技能
+     */
+    usedSkillKeys() {
+      return this.targetPlayer.usedSkillKeys || [];
     },
-    // 计算：未分配给玩家的剩余底牌
+    /**
+     * 未发动过的技能
+     */
+    availableSkillList() {
+      return this.totalSkillList.filter(
+        (skill) => !this.usedSkillKeys.includes(skill)
+      );
+    },
+    /**
+     * 未分配给玩家的剩余底牌
+     */
     centerRoleList() {
-      // 1. 生成本局全部身份池
-      let fullPool = [];
-      for (const [role, maxNum] of Object.entries(this.gameRoles)) {
-        for (let i = 0; i < maxNum; i++) {
-          fullPool.push(role);
+      // 1. 生成本局完整身份池
+      const fullRolePool = [];
+      Object.entries(this.gameRoles).forEach(([roleName, maxCount]) => {
+        for (let i = 0; i < maxCount; i++) {
+          fullRolePool.push(roleName);
         }
-      }
-
-      // 2. 取出所有已分配给玩家的身份
-      const usedRoles = this.allPlayers
-        .filter((p) => p.role && p.role !== "")
-        .map((p) => p.role);
-
-      // 3. 从总池移除已使用身份，得到剩余底牌
-      usedRoles.forEach((role) => {
-        const idx = fullPool.indexOf(role);
-        if (idx > -1) fullPool.splice(idx, 1);
       });
 
-      // 4. 最多返回2张底牌
-      return fullPool.slice(0, 2);
+      // 2. 收集所有已分配给玩家的身份
+      const usedRoleNames = this.allPlayers
+        .filter((player) => player.role)
+        .map((player) => player.role);
+
+      // 3. 从总池移除已占用身份，得到剩余底牌
+      usedRoleNames.forEach((role) => {
+        const index = fullRolePool.indexOf(role);
+        if (index > -1) fullRolePool.splice(index, 1);
+      });
+
+      // 最多返回2张底牌
+      return fullRolePool.slice(0, 2);
     },
   },
   methods: {
-    // 取消：仅关闭弹窗，不消耗技能次数
+    // 关闭弹窗，重置所有临时状态
     handleClose() {
       this.checkSeq = "";
       this.needSelectSkill = false;
       this.selectSkillKey = "";
-      this.selfSkillList = [];
+      this.totalSkillList = [];
       this.currentSkillKey = "";
       this.$emit("update:visible", false);
     },
-    // 确认选择互斥技能，切换到对应技能面板
+    // 互斥身份：选中技能后切换到对应技能操作面板
     confirmSelectSkill() {
       this.currentSkillKey = this.selectSkillKey;
       this.needSelectSkill = false;
     },
+    // 确认发动当前技能
     handleConfirm() {
-      const key = this.currentSkillKey;
+      const activeSkill = this.currentSkillKey;
       let isValid = true;
 
-      if (key === "see_one_player") {
+      if (activeSkill === "see_one_player") {
         const targetSeq = Number(this.checkSeq);
         if (!targetSeq || targetSeq <= 0) {
           this.$message.warning("请输入合法玩家序号");
@@ -217,8 +239,7 @@ export default {
             });
           }
         }
-      } else if (key === "see_two_center") {
-        // 底牌查看不需要输入内容，直接展示结果弹窗
+      } else if (activeSkill === "see_two_center") {
         const list = this.centerRoleList;
         let tipText = "";
         if (list.length === 0) {
@@ -235,11 +256,11 @@ export default {
         });
       }
 
-      // 输入不合法，不关闭弹窗、不消耗技能
+      // 表单校验不通过，不消耗技能、不关闭弹窗
       if (!isValid) return;
 
-      // 校验通过，传递当前技能key给父组件记录到usedSkillKeys
-      this.$emit("confirm-skill", this.currentSkillKey);
+      // 通知父组件记录本次使用的技能key
+      this.$emit("confirm-skill", activeSkill);
       this.handleClose();
     },
   },

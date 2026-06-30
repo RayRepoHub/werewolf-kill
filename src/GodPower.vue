@@ -146,6 +146,7 @@ export default {
             isNew: false,
             isVirtual: item.isVirtual,
             usedSkillKeys: item.usedSkillKeys || [],
+            skillUsed: !!item.skillUsed,
           }));
         this.playerList = list;
       }
@@ -198,6 +199,7 @@ export default {
         isNew: true, // 标记当前最新条目闪烁
         isVirtual: true, // 虚拟玩家专属标识
         usedSkillKeys: [],
+        skillUsed: false,
       };
       this.playerList.push(newItem);
 
@@ -250,6 +252,7 @@ export default {
         // 新增：把勾选玩家 usedSkillKeys 置为 []
         checkedPlayers.forEach((p) => {
           p.usedSkillKeys = [];
+          p.skillUsed = false;
         });
         this.$message.success(
           `已重置${checkedPlayers.length}名勾选玩家技能使用状态`
