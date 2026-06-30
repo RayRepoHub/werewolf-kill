@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-06-30 18:09:01
+ * @LastEditTime: 2026-06-30 22:00:12
  * @Description: 请输入
 -->
 <template>
@@ -26,13 +26,13 @@
       </p>
       <el-radio-group v-model="selectSkillKey">
         <el-radio
-          v-for="skillKey in totalSkillList"
-          :key="skillKey"
-          :label="skillKey"
-          :disabled="usedSkillKeys.includes(skillKey)"
+          v-for="sk in totalSkillKeys"
+          :key="sk"
+          :label="sk"
+          :disabled="usedSkillKeys.includes(sk)"
         >
-          {{ ONE_NIGHT_SKILL_MAP[skillKey]?.label }}
-          <span v-if="usedSkillKeys.includes(skillKey)">(已发动)</span>
+          {{ ONE_NIGHT_SKILL_MAP[sk]?.label }}
+          <span v-if="usedSkillKeys.includes(sk)">(已发动)</span>
         </el-radio>
       </el-radio-group>
     </div>
@@ -86,6 +86,7 @@
 
 <script>
 import { ONE_NIGHT_SKILL_MAP } from "@/const.js";
+
 export default {
   name: "SkillDialog",
   props: {
@@ -124,7 +125,7 @@ export default {
       checkSeq: "",
       needSelectSkill: false,
       selectSkillKey: "",
-      totalSkillList: [],
+      totalSkillKeys: [],
       currentSkillKey: "",
       currentRoleInfo: {},
     };
@@ -136,7 +137,7 @@ export default {
         this.checkSeq = "";
         this.needSelectSkill = false;
         this.selectSkillKey = "";
-        this.totalSkillList = [];
+        this.totalSkillKeys = [];
         this.currentSkillKey = "";
 
         const playerRoleId = this.targetPlayer.roleId;
@@ -149,10 +150,10 @@ export default {
         } else {
           this.currentRoleInfo = roleInfo;
         }
-        // 互斥多技能身份，开启选择面板
+        // 身份有多技能，开启选择面板
         if (roleInfo.skills.length > 1) {
           this.needSelectSkill = true;
-          this.totalSkillList = [...roleInfo.skills];
+          this.totalSkillKeys = [...roleInfo.skills];
         } else {
           this.currentSkillKey = this.skillKey;
         }
@@ -165,14 +166,6 @@ export default {
      */
     usedSkillKeys() {
       return this.targetPlayer.usedSkillKeys || [];
-    },
-    /**
-     * 未发动过的技能
-     */
-    availableSkillList() {
-      return this.totalSkillList.filter(
-        (skill) => !this.usedSkillKeys.includes(skill)
-      );
     },
     /**
      * 未分配给玩家的剩余底牌
@@ -207,7 +200,7 @@ export default {
       this.checkSeq = "";
       this.needSelectSkill = false;
       this.selectSkillKey = "";
-      this.totalSkillList = [];
+      this.totalSkillKeys = [];
       this.currentSkillKey = "";
       this.$emit("update:visible", false);
     },
