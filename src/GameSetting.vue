@@ -66,12 +66,13 @@
       :show-close="false"
       :fullscreen="true"
       append-to-body
+      class="full-screen-dialog"
     >
-      <el-form label-width="120px">
-        <el-form-item label="名称">
+      <el-form label-width="80px" label-position="top">
+        <el-form-item label="名称：">
           <el-input v-model="editForm.name" placeholder="请输入身份名称" />
         </el-form-item>
-        <el-form-item label="描述">
+        <el-form-item label="描述：">
           <el-input
             type="textarea"
             :rows="3"
@@ -81,7 +82,7 @@
           </el-input>
         </el-form-item>
         <!-- 技能多选：修复移动端溢出el-select -->
-        <el-form-item label="绑定技能">
+        <el-form-item label="绑定技能：">
           <el-select
             v-model="editForm.skills"
             multiple
@@ -105,7 +106,7 @@
           </el-select>
         </el-form-item>
         <!-- 新增：技能互斥单选控制 -->
-        <el-form-item label="技能互斥限制">
+        <el-form-item label="技能限制：">
           <el-switch
             v-model="editForm.singleSkill"
             active-text="仅能发动一个"
