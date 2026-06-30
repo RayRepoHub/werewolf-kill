@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-06-29 22:22:40
+ * @LastEditTime: 2026-06-30 00:15:33
  * @Description: 请输入
 -->
 <template>
@@ -22,7 +22,7 @@
         该身份技能互斥，本局仅可使用其中一项，请选择要发动的技能
       </p>
       <el-radio-group v-model="selectSkillKey">
-        <el-radio v-for="sk in selfSkillList" :key="sk" :label="sk">
+        <el-radio v-for="sk in showSkillList" :key="sk" :label="sk">
           {{ ONE_NIGHT_SKILL_MAP[sk]?.label }}
         </el-radio>
       </el-radio-group>
@@ -149,6 +149,12 @@ export default {
     },
   },
   computed: {
+    showSkillList() {
+      const allSkill = this.selfSkillList;
+      const usedSkill = this.targetPlayer.usedSkillKeys || [];
+      const leaveSkill = allSkill.filter((sk) => !usedSkill.includes(sk));
+      return leaveSkill;
+    },
     // 计算：未分配给玩家的剩余底牌
     centerRoleList() {
       // 1. 生成本局全部身份池
@@ -232,8 +238,8 @@ export default {
       // 输入不合法，不关闭弹窗、不消耗技能
       if (!isValid) return;
 
-      // 校验通过，通知父组件：技能已使用，锁定按钮
-      this.$emit("confirm-skill");
+      // 校验通过，传递当前技能key给父组件记录到usedSkillKeys
+      this.$emit("confirm-skill", this.currentSkillKey);
       this.handleClose();
     },
   },

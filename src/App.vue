@@ -99,7 +99,15 @@
                     .join("、")
                 }}
                 <svg-icon icon-class="click-skill" />
-                <span v-if="localPlayer.skillUsed">(已使用)</span>
+                <span
+                  v-if="
+                    localPlayer.skills.every((k) =>
+                      (localPlayer.usedSkillKeys || []).includes(k)
+                    )
+                  "
+                >
+                  (已全部使用)
+                </span>
               </span>
             </div>
           </div>
@@ -464,10 +472,10 @@
     <SkillDialog
       :visible.sync="skillDialogVisible"
       :skillKey="currentSkillKey"
+      :targetPlayer="localPlayer"
       :allPlayers="players"
       :gameRoles="gameRoles"
       :allRoleConfig="roleConfigList"
-      :targetPlayer="localPlayer"
       @confirm-skill="onSkillConsumed"
     />
   </div>
@@ -553,7 +561,6 @@ export default {
 
       skillDialogVisible: false,
       currentSkillKey: "",
-      skillUsed: false,
     };
   },
 
@@ -600,27 +607,34 @@ export default {
   },
 
   methods: {
-    onSkillConsumed() {
-      // 找到云端自己的玩家对象
+    onSkillConsumed(selectedSkillKey) {
       const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
-      if (me) {
-        me.skillUsed = true;
+      if (!me) return;
+      me.usedSkillKeys = me.usedSkillKeys || [];
+
+      // 只存入当前使用的单个技能
+      if (!me.usedSkillKeys.includes(selectedSkillKey)) {
+        me.usedSkillKeys.push(selectedSkillKey);
       }
-      this.skillUsed = true;
-      // 同步到后端
+
+      this.localPlayer = { ...this.localPlayer, ...me };
+      this.saveLocal();
       this.saveGame();
     },
     onClickSkill() {
-      // 技能已使用，直接拦截无弹窗
-      if (this.skillUsed) {
-        this.$message.info("本局该技能已经使用，无法再次释放");
+      const roleCfg = this.roleConfigList.find(
+        (r) => r.name === this.localPlayer.role
+      );
+      if (!roleCfg || !this.localPlayer.skills?.length) return;
+      const usedArr = this.localPlayer.usedSkillKeys || [];
+      const availSkillList = this.localPlayer.skills.filter(
+        (k) => !usedArr.includes(k)
+      );
+      if (availSkillList.length === 0) {
+        this.$message.info("本局所有技能均已使用完毕");
         return;
       }
-      // 无技能直接返回
-      if (!this.localPlayer.skills || this.localPlayer.skills.length === 0)
-        return;
-      // 取当前玩家第一个技能
-      this.currentSkillKey = this.localPlayer.skills[0];
+      this.currentSkillKey = availSkillList[0];
       this.skillDialogVisible = true;
     },
     /**
@@ -959,6 +973,7 @@ export default {
           note: "",
           thirdMark: "",
           skills: [],
+          usedSkillKeys: [],
         };
       }
       this.saveLocal();
@@ -1034,8 +1049,9 @@ export default {
         // 对局存在 + 自己在玩家列表：正常保留对局状态
         if (this.gameStatus.exist && me) {
           this.gameStatus.joined = true;
+          // 兜底数组字段
+          me.usedSkillKeys = me.usedSkillKeys || [];
           this.localPlayer = { ...this.localPlayer, ...me };
-          this.skillUsed = !!me.skillUsed;
           this.saveLocal();
         } else {
           // 对局已解散 / 对局存在但自己被移出列表：自动退出对局
@@ -1150,6 +1166,7 @@ export default {
         seq: 0,
         dead: false,
         thirdMark: "",
+        usedSkillKeys: [],
       });
       this.gameData.players = this.players;
       await this.saveGame();
@@ -1186,6 +1203,7 @@ export default {
             seq: 0,
             dead: false,
             thirdMark: "",
+            usedSkillKeys: [],
           },
         ],
         msg: this.judgeInitMsg,

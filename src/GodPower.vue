@@ -145,6 +145,7 @@ export default {
             checked: false,
             isNew: false,
             isVirtual: item.isVirtual,
+            usedSkillKeys: item.usedSkillKeys || [],
           }));
         this.playerList = list;
       }
@@ -196,6 +197,7 @@ export default {
         checked: false,
         isNew: true, // 标记当前最新条目闪烁
         isVirtual: true, // 虚拟玩家专属标识
+        usedSkillKeys: [],
       };
       this.playerList.push(newItem);
 
@@ -245,9 +247,9 @@ export default {
         checkedPlayers.forEach((p) => (p.role = ""));
         this.$message.success(`已清空${checkedPlayers.length}名勾选玩家身份`);
       } else if (command === "resetSkillUsed") {
-        // 新增：把勾选玩家 skillUsed 置为 false
+        // 新增：把勾选玩家 usedSkillKeys 置为 []
         checkedPlayers.forEach((p) => {
-          p.skillUsed = false;
+          p.usedSkillKeys = [];
         });
         this.$message.success(
           `已重置${checkedPlayers.length}名勾选玩家技能使用状态`
