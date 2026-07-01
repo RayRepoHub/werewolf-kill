@@ -53,6 +53,7 @@
             v-model="createForm.hasGod"
             class="setting-checkbox"
             style="margin-top: 12px"
+            :disabled="enableGodPower"
           >
             包含<span class="highlight-text"> {{ GOD_NAME }} </span>
           </el-checkbox>
@@ -119,7 +120,7 @@ export default {
         adminPwd: "",
         roomPwd: "",
         hasThird: false,
-        hasGod: false,
+        hasGod: true,
       },
     };
   },
@@ -140,8 +141,23 @@ export default {
         this.createForm.adminPwd = "";
         this.createForm.roomPwd = "";
         this.createForm.hasThird = false;
-        this.createForm.hasGod = false;
+        this.createForm.hasGod = true;
         this.enableGodPower = false;
+      }
+    },
+    enableGodPower(val) {
+      if (val) {
+        // 开启上帝派牌 → 必须开启hasGod
+        this.createForm.hasGod = true;
+      }
+    },
+    // 监听hasGod，当enableGodPower为true时，禁止手动取消hasGod
+    "createForm.hasGod"(newVal) {
+      if (this.enableGodPower && newVal === false) {
+        this.$message.warning(
+          "开启上帝指派身份时，本局必须包含上帝角色，无法取消"
+        );
+        this.createForm.hasGod = true;
       }
     },
   },
@@ -160,6 +176,11 @@ export default {
 
     async handleCreate() {
       const { roles, adminPwd, roomPwd, hasThird, hasGod } = this.createForm;
+      // 新增强制校验：开启上帝派牌必须开启hasGod
+      if (this.enableGodPower && !hasGod) {
+        this.$message.error("若选择由上帝指派身份，对局必须包含上帝角色！");
+        return;
+      }
       // 校验管理员密码
       if (!adminPwd?.trim()) {
         this.$message.error("请输入管理员密码！");
