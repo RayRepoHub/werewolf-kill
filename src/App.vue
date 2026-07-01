@@ -600,15 +600,15 @@ export default {
 
   methods: {
     onSkillConsumed(payload) {
-      const { selectedSkillKey, newPlayerList } = payload;
+      const { skillKey, newPlayerList } = payload;
       const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
       if (!me) return;
 
       // 互换身份技能不记录已使用，其余技能正常记录
-      if (selectedSkillKey !== "rob_swap_player") {
+      if (skillKey !== "rob_swap_player") {
         me.usedSkillKeys = me.usedSkillKeys || [];
-        if (!me.usedSkillKeys.includes(selectedSkillKey)) {
-          me.usedSkillKeys.push(selectedSkillKey);
+        if (!me.usedSkillKeys.includes(skillKey)) {
+          me.usedSkillKeys.push(skillKey);
         }
         const roleCfg = this.roleConfigList.find(
           (r) => r.roleId === this.localPlayer.roleId

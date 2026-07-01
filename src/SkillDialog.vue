@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-01 17:52:43
+ * @LastEditTime: 2026-07-01 18:29:43
  * @Description: 请输入
 -->
 <template>
@@ -70,6 +70,28 @@
       ></el-input>
     </div>
 
+    <!-- 交换两名场上玩家身份 swap_two_players -->
+    <div v-else-if="currentSkillKey === 'swap_two_players'">
+      <p style="margin-bottom: 12px">
+        请输入两名需要交换身份的玩家序号（不可包含自己）
+      </p>
+      <div style="display: flex; gap: 12px; align-items: center">
+        <el-input
+          v-model="checkSeq"
+          placeholder="玩家1序号"
+          type="number"
+          style="width: 180px"
+        ></el-input>
+        <span> ↔ </span>
+        <el-input
+          v-model="secondSeq"
+          placeholder="玩家2序号"
+          type="number"
+          style="width: 180px"
+        ></el-input>
+      </div>
+    </div>
+
     <!-- 后续其他技能在这里扩展 -->
     <div v-else>
       <p>该技能暂无交互弹窗</p>
@@ -133,6 +155,7 @@ export default {
     return {
       ONE_NIGHT_SKILL_MAP,
       checkSeq: "",
+      secondSeq: "",
       needSelectSkill: false,
       selectSkillKey: "",
       totalSkillKeys: [],
@@ -145,6 +168,7 @@ export default {
       if (val) {
         // 弹窗打开初始化所有临时状态
         this.checkSeq = "";
+        this.secondSeq = "";
         this.needSelectSkill = false;
         this.selectSkillKey = "";
         this.totalSkillKeys = [];
@@ -300,11 +324,59 @@ export default {
             }
           }
         }
+      } else if (activeSkill === "swap_two_players") {
+        const num1 = Number(this.checkSeq);
+        const num2 = Number(this.secondSeq);
+        // 基础数字校验
+        if (!num1 || num1 <= 0 || !num2 || num2 <= 0) {
+          this.$message.warning("两个输入框都需要填写合法正整数序号");
+          isValid = false;
+        } else if (num1 === num2) {
+          this.$message.warning("两名玩家序号不能相同");
+          isValid = false;
+        } else if (
+          num1 === this.targetPlayer.seq ||
+          num2 === this.targetPlayer.seq
+        ) {
+          this.$message.warning("交换对象不能包含自己");
+          isValid = false;
+        } else {
+          const p1 = this.allPlayers.find((p) => p.seq === num1);
+          const p2 = this.allPlayers.find((p) => p.seq === num2);
+          if (!p1 || !p2) {
+            this.$message.error("存在无效玩家序号");
+            isValid = false;
+          } else {
+            this.$alert(
+              `玩家${num1}：${p1.role}\n玩家${num2}：${p2.role}\n确认后交换二人身份`,
+              "交换预览",
+              {
+                confirmButtonText: "知道了",
+                customClass: "msg-box",
+                showClose: false,
+              }
+            );
+            newPlayerList = JSON.parse(JSON.stringify(this.allPlayers));
+            const pl1 = newPlayerList.find((p) => p.seq === num1);
+            const pl2 = newPlayerList.find((p) => p.seq === num2);
+            if (pl1 && pl2) {
+              const tempRole = pl1.role;
+              const tempRoleId = pl1.roleId;
+              const tempSkills = pl1.skills;
+              pl1.role = pl2.role;
+              pl1.roleId = pl2.roleId;
+              pl1.skills = pl2.skills;
+              pl2.role = tempRole;
+              pl2.roleId = tempRoleId;
+              pl2.skills = tempSkills;
+            }
+          }
+        }
       }
 
       if (!isValid) return;
       this.$emit("confirm-skill", {
-        selectedSkillKey: activeSkill,
+        skillKey: activeSkill,
         targetSeq,
         newPlayerList,
       });
