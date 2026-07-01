@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-01 19:01:33
+ * @LastEditTime: 2026-07-01 21:14:30
  * @Description: 请输入
 -->
 <template>
@@ -92,6 +92,48 @@
       </div>
     </div>
 
+    <!-- 酒鬼与一张底牌互换 drunk_swap_center -->
+    <div v-else-if="currentSkillKey === 'drunk_swap_center'">
+      <div style="margin-bottom: 12px">请选择要互换的底牌</div>
+
+      <div
+        v-if="centerRoleList.length === 0"
+        style="margin-bottom: 12px; color: #999"
+      >
+        本局没有剩余底牌，无法互换
+      </div>
+
+      <div
+        v-if="centerRoleList.length > 0"
+        style="margin-bottom: 12px; color: #999"
+      >
+        剩余底牌数量：{{ centerRoleList.length }}
+        张，互换后你不会得知置换后的身份
+      </div>
+
+      <div
+        v-if="centerRoleList.length > 0"
+        class="unknown-face-down-deck flex-between"
+      >
+        <div
+          v-for="(role, index) in centerRoleList"
+          :key="index"
+          @click="selectedCenterIndex = index"
+          class="card"
+          :style="{
+            borderColor: selectedCenterIndex === index ? '#409eff' : '#d9d9d9',
+            color: selectedCenterIndex === index ? '#409eff' : '#d9d9d9',
+            boxShadow:
+              selectedCenterIndex === index
+                ? '0 0 0 3px rgba(64, 158, 255, 0.2)'
+                : 'none',
+          }"
+        >
+          <i class="el-icon-question"></i>
+        </div>
+      </div>
+    </div>
+
     <!-- 后续其他技能在这里扩展 -->
     <div v-else>
       <p>该技能暂无交互弹窗</p>
@@ -156,6 +198,7 @@ export default {
       ONE_NIGHT_SKILL_MAP,
       checkSeq: "",
       secondSeq: "",
+      selectedCenterIndex: null,
       needSelectSkill: false,
       selectSkillKey: "",
       totalSkillKeys: [],
@@ -169,6 +212,7 @@ export default {
         // 弹窗打开初始化所有临时状态
         this.checkSeq = "";
         this.secondSeq = "";
+        this.selectedCenterIndex = null;
         this.needSelectSkill = false;
         this.selectSkillKey = "";
         this.totalSkillKeys = [];
@@ -224,14 +268,15 @@ export default {
         if (index > -1) fullRolePool.splice(index, 1);
       });
 
-      // 最多返回2张底牌
-      return fullRolePool.slice(0, 2);
+      return fullRolePool;
     },
   },
   methods: {
     // 关闭弹窗，重置所有临时状态
     handleClose() {
       this.checkSeq = "";
+      this.secondSeq = "";
+      this.selectedCenterIndex = null; // 新增
       this.needSelectSkill = false;
       this.selectSkillKey = "";
       this.totalSkillKeys = [];
@@ -372,6 +417,43 @@ export default {
             }
           }
         }
+      } else if (activeSkill === "drunk_swap_center") {
+        const centerList = this.centerRoleList;
+
+        if (centerList.length === 0) {
+          this.$message.warning("本局无剩余底牌，无法互换");
+          isValid = false;
+        } else if (this.selectedCenterIndex === null) {
+          this.$message.warning("请先选择一张底牌");
+          isValid = false;
+        } else if (
+          this.selectedCenterIndex < 0 ||
+          this.selectedCenterIndex >= centerList.length
+        ) {
+          this.$message.warning("底牌选择无效");
+          isValid = false;
+        } else {
+          newPlayerList = JSON.parse(JSON.stringify(this.allPlayers));
+          const selfPlayer = newPlayerList.find(
+            (item) => item.uuid === this.targetPlayer.uuid
+          );
+          const swapRole = centerList[this.selectedCenterIndex];
+
+          // 只修改玩家身份，底牌由 centerRoleList 自动计算
+          selfPlayer.role = swapRole;
+          selfPlayer.roleId = "";
+          selfPlayer.skills = [];
+
+          this.$alert(
+            "已与选中底牌完成互换，你不会得知置换后的身份",
+            "操作完成",
+            {
+              confirmButtonText: "知道了",
+              customClass: "msg-box",
+              showClose: false,
+            }
+          );
+        }
       }
 
       if (!isValid) return;
@@ -386,7 +468,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .center-role-box {
   display: flex;
   gap: 12px;
@@ -396,5 +478,24 @@ export default {
   background: #e6f4ff;
   border-radius: 6px;
   font-size: 16px;
+}
+.unknown-face-down-deck {
+  flex-wrap: wrap;
+  .card {
+    margin-left: 12px;
+    margin-bottom: 12px;
+    width: 100px;
+    height: 140px;
+    border-radius: 12px;
+    background: #e6f4ff;
+    border: 2px solid #d9d9d9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #8c8c8c;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
 }
 </style>
