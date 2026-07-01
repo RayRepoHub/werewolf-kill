@@ -711,6 +711,7 @@ export default {
         });
     },
     async openGodPowerPanel() {
+      await this.refreshAll();
       this.godPowerVisible = true;
     },
     /**
@@ -1451,8 +1452,8 @@ export default {
     /**
      * 手动刷新对局数据
      */
-    refreshAll() {
-      this.getGame();
+    async refreshAll() {
+      await this.getGame();
     },
 
     /**

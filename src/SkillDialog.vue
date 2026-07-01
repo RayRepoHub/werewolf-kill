@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-01 21:14:30
+ * @LastEditTime: 2026-07-01 21:35:04
  * @Description: 请输入
 -->
 <template>
@@ -113,7 +113,7 @@
 
       <div
         v-if="centerRoleList.length > 0"
-        class="unknown-face-down-deck flex-between"
+        class="unknown-face-down-deck flex-start"
       >
         <div
           v-for="(role, index) in centerRoleList"
