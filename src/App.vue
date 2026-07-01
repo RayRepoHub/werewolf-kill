@@ -1211,13 +1211,13 @@ export default {
      * 接收子组件参数，执行创建对局逻辑
      */
     async onCreateGame(params) {
-      const { gameRoles, enableGodPower, roomPwd, hasThird } = params;
+      const { gameRoles, enableGodPower, roomPwd, hasThird, hasGod } = params;
       this.createLoading = true;
       const initPlayers = [
         {
           uuid: this.localPlayer.uuid,
           name: this.localPlayer.name,
-          role: this.GOD_NAME,
+          role: hasGod ? this.GOD_NAME : "",
           seq: 0,
           dead: false,
           thirdMark: "",
@@ -1226,7 +1226,7 @@ export default {
       ];
       // 初始化对局数据，存入房间密码
       this.gameData = {
-        judge: this.localPlayer.name,
+        judge: hasGod ? this.localPlayer.name : "",
         hasThird: hasThird,
         roles: gameRoles,
         enableGodPower: enableGodPower,

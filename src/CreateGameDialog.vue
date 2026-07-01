@@ -49,6 +49,13 @@
           >
             包含<span class="highlight-text"> 第三方阵营 </span>
           </el-checkbox>
+          <el-checkbox
+            v-model="createForm.hasGod"
+            class="setting-checkbox"
+            style="margin-top: 12px"
+          >
+            包含<span class="highlight-text"> {{ GOD_NAME }} </span>
+          </el-checkbox>
         </div>
       </div>
 
@@ -112,6 +119,7 @@ export default {
         adminPwd: "",
         roomPwd: "",
         hasThird: false,
+        hasGod: false,
       },
     };
   },
@@ -132,6 +140,7 @@ export default {
         this.createForm.adminPwd = "";
         this.createForm.roomPwd = "";
         this.createForm.hasThird = false;
+        this.createForm.hasGod = false;
         this.enableGodPower = false;
       }
     },
@@ -150,7 +159,7 @@ export default {
     },
 
     async handleCreate() {
-      const { roles, adminPwd, roomPwd, hasThird } = this.createForm;
+      const { roles, adminPwd, roomPwd, hasThird, hasGod } = this.createForm;
       // 校验管理员密码
       if (!adminPwd?.trim()) {
         this.$message.error("请输入管理员密码！");
@@ -224,6 +233,7 @@ export default {
         enableGodPower: this.enableGodPower,
         roomPwd: roomPwd.trim(),
         hasThird: hasThird,
+        hasGod: hasGod,
       });
       this.visibleLocal = false;
     },
