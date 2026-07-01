@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-01 18:29:43
+ * @LastEditTime: 2026-07-01 19:01:33
  * @Description: 请输入
 -->
 <template>
@@ -261,11 +261,15 @@ export default {
             this.$message.error("未找到该序号玩家");
             isValid = false;
           } else {
-            this.$alert(`该玩家身份：${targetPlayer.role}`, "查验结果", {
-              confirmButtonText: "知道了",
-              customClass: "msg-box",
-              showClose: false,
-            });
+            this.$alert(
+              `${this.checkSeq}号玩家身份：${targetPlayer.role}`,
+              "查验结果",
+              {
+                confirmButtonText: "知道了",
+                customClass: "msg-box",
+                showClose: false,
+              }
+            );
           }
         }
       } else if (activeSkill === "see_two_center") {
@@ -298,7 +302,7 @@ export default {
             isValid = false;
           } else {
             this.$alert(
-              `对方身份：${targetPlayer.role}，确认后互换双方身份`,
+              `${this.checkSeq}号身份：${targetPlayer.role}，确认后互换双方身份`,
               "互换预览",
               {
                 confirmButtonText: "知道了",
@@ -347,15 +351,11 @@ export default {
             this.$message.error("存在无效玩家序号");
             isValid = false;
           } else {
-            this.$alert(
-              `玩家${num1}：${p1.role}\n玩家${num2}：${p2.role}\n确认后交换二人身份`,
-              "交换预览",
-              {
-                confirmButtonText: "知道了",
-                customClass: "msg-box",
-                showClose: false,
-              }
-            );
+            this.$alert(`玩家${num1}和玩家${num2}的身份已交换`, "交换成功", {
+              confirmButtonText: "知道了",
+              customClass: "msg-box",
+              showClose: false,
+            });
             newPlayerList = JSON.parse(JSON.stringify(this.allPlayers));
             const pl1 = newPlayerList.find((p) => p.seq === num1);
             const pl2 = newPlayerList.find((p) => p.seq === num2);
