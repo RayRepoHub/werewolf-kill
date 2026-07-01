@@ -465,7 +465,7 @@
       :visible.sync="skillDialogVisible"
       :skillKey="currentSkillKey"
       :targetPlayer="localPlayer"
-      :allPlayers="players"
+      :allPlayers="gameData.oneNightPlayers"
       :gameRoles="gameRoles"
       :allRoleConfig="roleConfigList"
       @confirm-skill="onSkillConsumed"
@@ -599,29 +599,40 @@ export default {
   },
 
   methods: {
-    onSkillConsumed(selectedSkillKey) {
+    onSkillConsumed(payload) {
+      const { selectedSkillKey, newPlayerList } = payload;
       const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
       if (!me) return;
-      me.usedSkillKeys = me.usedSkillKeys || [];
 
-      // 只存入当前使用的单个技能
-      if (!me.usedSkillKeys.includes(selectedSkillKey)) {
-        me.usedSkillKeys.push(selectedSkillKey);
+      // 互换身份技能不记录已使用，其余技能正常记录
+      if (selectedSkillKey !== "rob_swap_player") {
+        me.usedSkillKeys = me.usedSkillKeys || [];
+        if (!me.usedSkillKeys.includes(selectedSkillKey)) {
+          me.usedSkillKeys.push(selectedSkillKey);
+        }
+        const roleCfg = this.roleConfigList.find(
+          (r) => r.roleId === this.localPlayer.roleId
+        );
+        if (roleCfg) {
+          if (roleCfg.singleSkill && me.usedSkillKeys.length > 0) {
+            me.skillUsed = true;
+          } else if (
+            !roleCfg.singleSkill &&
+            me.usedSkillKeys.length === roleCfg.skills.length
+          ) {
+            me.skillUsed = true;
+          }
+        }
       }
 
-      const roleCfg = this.roleConfigList.find(
-        (r) => r.roleId === this.localPlayer.roleId
-      );
-      if (
-        (roleCfg.singleSkill && me.usedSkillKeys.length > 0) ||
-        (!roleCfg.singleSkill &&
-          me.usedSkillKeys.length === roleCfg.skills.length)
-      ) {
-        me.skillUsed = true;
+      // 子组件生成好互换后的完整玩家数组，存入云端专属一夜狼人列表
+      if (newPlayerList) {
+        this.gameData.oneNightPlayers = newPlayerList;
       }
 
       this.localPlayer = { ...this.localPlayer, ...me };
       this.saveLocal();
+      // saveGame 会把整个 gameData（包含 oneNightPlayers）提交云端保存
       this.saveGame();
     },
     onClickSkill() {
@@ -727,7 +738,6 @@ export default {
      */
     async handleGodSave(newPlayers) {
       const god = this.players.find((p) => p.role === this.GOD_NAME);
-      // 给分配的玩家补充roleId、skills
       newPlayers = newPlayers.map((player) => {
         if (!player.role || player.role === this.GOD_NAME) return player;
         const cfg = this.roleConfigList.find((r) => r.name === player.role);
@@ -738,6 +748,10 @@ export default {
         };
       });
       this.gameData.players = [god, ...newPlayers];
+      // 同步一夜狼人专用列表
+      this.gameData.oneNightPlayers = JSON.parse(
+        JSON.stringify(this.gameData.players)
+      );
       await this.saveGame();
       this.refreshAll();
       this.$message.success(`${this.GOD_NAME}之力已生效！`);
@@ -1033,6 +1047,11 @@ export default {
         this.gameData = res || {};
         this.gameRoles = this.gameData.roles || {};
         this.players = this.gameData.players || [];
+        if (!Array.isArray(this.gameData.oneNightPlayers)) {
+          this.gameData.oneNightPlayers = JSON.parse(
+            JSON.stringify(this.players)
+          );
+        }
 
         // 玩家排序：上帝优先 > 有序号玩家 > 旁观者
         this.players.sort((a, b) => {
@@ -1173,6 +1192,7 @@ export default {
         usedSkillKeys: [],
       });
       this.gameData.players = this.players;
+      this.gameData.oneNightPlayers = JSON.parse(JSON.stringify(this.players));
       await this.saveGame();
       this.gameStatus.joined = true;
       this.$message.success("加入成功");
@@ -1191,25 +1211,27 @@ export default {
     async onCreateGame(params) {
       const { gameRoles, enableGodPower, roomPwd, hasThird } = params;
       this.createLoading = true;
-
+      const initPlayers = [
+        {
+          uuid: this.localPlayer.uuid,
+          name: this.localPlayer.name,
+          role: this.GOD_NAME,
+          seq: 0,
+          dead: false,
+          thirdMark: "",
+          usedSkillKeys: [],
+        },
+      ];
       // 初始化对局数据，存入房间密码
       this.gameData = {
         judge: this.localPlayer.name,
         hasThird: hasThird,
         roles: gameRoles,
         enableGodPower: enableGodPower,
-        roomPwd: roomPwd || "", // 房间密码，空代表无密码
-        players: [
-          {
-            uuid: this.localPlayer.uuid,
-            name: this.localPlayer.name,
-            role: this.GOD_NAME,
-            seq: 0,
-            dead: false,
-            thirdMark: "",
-            usedSkillKeys: [],
-          },
-        ],
+        roomPwd: roomPwd || "",
+        players: initPlayers,
+        // 一夜狼人专用玩家数组，开局与原始玩家完全一致
+        oneNightPlayers: JSON.parse(JSON.stringify(initPlayers)),
         msg: this.judgeInitMsg,
         votes: {},
         abandons: [],
@@ -1285,6 +1307,9 @@ export default {
 
         // 把新身份数据提交到后端存储
         await this.saveGame();
+        this.gameData.oneNightPlayers = JSON.parse(
+          JSON.stringify(this.players)
+        );
 
         // ========== 关键3：保存完成后再次刷新 ==========
         // 同步本次提交后其他玩家的最新状态，刷新本地身份池
@@ -1356,6 +1381,9 @@ export default {
             (p) => p.uuid !== this.localPlayer.uuid
           );
           this.gameData.players = this.players;
+          this.gameData.oneNightPlayers = JSON.parse(
+            JSON.stringify(this.players)
+          );
           await this.saveGame();
 
           // 清空本地对局信息
@@ -1395,6 +1423,7 @@ export default {
             judge: "",
             roles: {},
             players: [],
+            oneNightPlayers: [],
             msg: "",
             votes: {},
             abandons: [],

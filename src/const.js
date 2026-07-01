@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-05-24 17:16:56
  * @LastEditors: YangRui
- * @LastEditTime: 2026-06-30 11:32:07
+ * @LastEditTime: 2026-07-01 15:48:27
  * @Description: 常量配置
  */
 
@@ -37,14 +37,15 @@ export const API_SERVERS = {
 // ====================== 一夜狼人杀技能字典 ======================
 export const ONE_NIGHT_SKILL_MAP = {
     // 狼人阵营
-    see_wolf_mate: {
-        label: "狼队友互认",
-        desc: "夜间可以看见所有其他狼人，知晓队友身份"
-    },
-    know_all_wolf: {
-        label: "知晓全场狼人",
-        desc: "爪牙专属，夜间看见全部狼人，但狼人看不到自己"
-    },
+    // 可以暂时不做，线下可以用闭眼用动作代替
+    // see_wolf_mate: {
+    //     label: "狼队友互认",
+    //     desc: "夜间可以看见所有其他狼人，知晓队友身份"
+    // },
+    // know_all_wolf: {
+    //     label: "知晓全场狼人",
+    //     desc: "爪牙专属，夜间看见全部狼人，但狼人看不到自己"
+    // },
 
     // 信息查看类
     see_two_center: {
@@ -75,22 +76,22 @@ export const ONE_NIGHT_SKILL_MAP = {
     },
 
     // 胜利特殊机制
-    win_voted_out: {
-        label: "被投票出局获胜",
-        desc: "皮匠，唯一胜利条件是白天被全体投票放逐"
-    },
+    // win_voted_out: {
+    //     label: "被投票出局获胜",
+    //     desc: "皮匠，唯一胜利条件是白天被全体投票放逐"
+    // },
 
-    // 出局被动技能
-    hunter_take_away: {
-        label: "出局带走投票者",
-        desc: "猎人，若被投票出局，可以带走一名投自己的玩家"
-    },
+    // // 出局被动技能
+    // hunter_take_away: {
+    //     label: "出局带走投票者",
+    //     desc: "猎人，若被投票出局，可以带走一名投自己的玩家"
+    // },
 
     // 双人互认
-    see_mason_partner: {
-        label: "守夜人互认",
-        desc: "两名守夜人夜间互相看见对方；单张则知道另一张在中央底牌"
-    }
+    // see_mason_partner: {
+    //     label: "守夜人互认",
+    //     desc: "两名守夜人夜间互相看见对方；单张则知道另一张在中央底牌"
+    // }
 };
 
 // 用于页面v-for循环渲染技能多选框

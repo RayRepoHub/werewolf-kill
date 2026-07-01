@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-06-30 22:00:12
+ * @LastEditTime: 2026-07-01 17:52:43
  * @Description: 请输入
 -->
 <template>
@@ -58,6 +58,16 @@
         </div>
       </div>
       <div v-else>暂无剩余底牌</div>
+    </div>
+
+    <!-- 互换身份 rob_swap_player -->
+    <div v-else-if="currentSkillKey === 'rob_swap_player'">
+      <p style="margin-bottom: 12px">请输入你要互换身份的玩家序号</p>
+      <el-input
+        v-model="checkSeq"
+        placeholder="输入数字序号"
+        type="number"
+      ></el-input>
     </div>
 
     <!-- 后续其他技能在这里扩展 -->
@@ -213,9 +223,11 @@ export default {
     handleConfirm() {
       const activeSkill = this.currentSkillKey;
       let isValid = true;
+      let targetSeq = null;
+      let newPlayerList = null;
 
       if (activeSkill === "see_one_player") {
-        const targetSeq = Number(this.checkSeq);
+        targetSeq = Number(this.checkSeq);
         if (!targetSeq || targetSeq <= 0) {
           this.$message.warning("请输入合法玩家序号");
           isValid = false;
@@ -247,13 +259,55 @@ export default {
           customClass: "msg-box",
           showClose: false,
         });
+      } else if (activeSkill === "rob_swap_player") {
+        targetSeq = Number(this.checkSeq);
+        if (!targetSeq || targetSeq <= 0) {
+          this.$message.warning("请输入合法玩家序号");
+          isValid = false;
+        } else if (targetSeq === this.targetPlayer.seq) {
+          this.$message.warning("不能选择自己互换身份");
+          isValid = false;
+        } else {
+          const targetPlayer = this.allPlayers.find((p) => p.seq === targetSeq);
+          if (!targetPlayer) {
+            this.$message.error("未找到该序号玩家");
+            isValid = false;
+          } else {
+            this.$alert(
+              `对方身份：${targetPlayer.role}，确认后互换双方身份`,
+              "互换预览",
+              {
+                confirmButtonText: "知道了",
+                customClass: "msg-box",
+                showClose: false,
+              }
+            );
+            newPlayerList = JSON.parse(JSON.stringify(this.allPlayers));
+            const self = newPlayerList.find(
+              (item) => item.uuid === this.targetPlayer.uuid
+            );
+            const target = newPlayerList.find((item) => item.seq === targetSeq);
+            if (self && target) {
+              const tempRole = self.role;
+              const tempRoleId = self.roleId;
+              const tempSkills = self.skills;
+              self.role = target.role;
+              self.roleId = target.roleId;
+              self.skills = target.skills;
+              target.role = tempRole;
+              target.roleId = tempRoleId;
+              target.skills = tempSkills;
+            }
+          }
+        }
       }
 
-      // 表单校验不通过，不消耗技能、不关闭弹窗
       if (!isValid) return;
-
-      // 通知父组件记录本次使用的技能key
-      this.$emit("confirm-skill", activeSkill);
+      this.$emit("confirm-skill", {
+        selectedSkillKey: activeSkill,
+        targetSeq,
+        newPlayerList,
+      });
       this.handleClose();
     },
   },
