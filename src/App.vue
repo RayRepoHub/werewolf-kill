@@ -635,7 +635,8 @@ export default {
       // saveGame 会把整个 gameData（包含 oneNightPlayers）提交云端保存
       this.saveGame();
     },
-    onClickSkill() {
+    async onClickSkill() {
+      await this.refreshAll();
       const roleCfg = this.roleConfigList.find(
         (r) => r.name === this.localPlayer.role
       );
