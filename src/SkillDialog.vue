@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-01 21:35:04
+ * @LastEditTime: 2026-07-01 22:48:59
  * @Description: 请输入
 -->
 <template>
@@ -68,6 +68,13 @@
         placeholder="输入数字序号"
         type="number"
       ></el-input>
+    </div>
+
+    <!-- 观看自己现在的身份 check_self_final -->
+    <div v-else-if="currentSkillKey === 'check_self_final'">
+      <p style="margin-bottom: 12px">
+        点击发动技能后，你可以查看自己当前的身份
+      </p>
     </div>
 
     <!-- 交换两名场上玩家身份 swap_two_players -->
@@ -454,6 +461,15 @@ export default {
             }
           );
         }
+      } else if (activeSkill === "check_self_final") {
+        const targetPlayer = this.allPlayers.find(
+          (p) => p.uuid === this.targetPlayer.uuid
+        );
+        this.$alert(`你现在的身份是：${targetPlayer.role}`, "查验结果", {
+          confirmButtonText: "知道了",
+          customClass: "msg-box",
+          showClose: false,
+        });
       }
 
       if (!isValid) return;
