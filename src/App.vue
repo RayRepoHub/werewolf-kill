@@ -144,6 +144,13 @@
                     {{ p.name }}
                     <span v-if="p.dead" class="dead-suffix">(出局)</span>
                   </span>
+                  <!-- 警长标签 -->
+                  <span
+                    v-if="p.sheriff && (isJudge || p.uuid === localPlayer.uuid)"
+                    class="sheriff-tag"
+                  >
+                    警长
+                  </span>
                   <span
                     v-if="(p.role && isJudge) || p.role === GOD_NAME"
                     class="role-tag"
@@ -194,7 +201,7 @@
                         v-if="gameData.enableSheriff"
                         @click.native="toggleSheriff(p)"
                       >
-                        设为警长
+                        {{ p.sheriff ? "取消警徽" : "设为警长" }}
                       </el-dropdown-item>
                       <el-dropdown-item
                         v-if="gameData.hasThird"
@@ -605,7 +612,56 @@ export default {
   },
 
   methods: {
-    toggleSheriff() {},
+    /**
+     * 设置/取消警长，全局仅允许一名警长
+     * @param {Object} targetPlayer 目标玩家对象
+     */
+    async toggleSheriff(targetPlayer) {
+      // 拉取最新对局数据，防止本地旧缓存冲突
+      await this.getGame();
+      const allPlayers = this.gameData.players;
+
+      // 先检查目标玩家是否存在
+      const hasTargetPlayer = !!allPlayers.find(
+        (item) => item.uuid === targetPlayer.uuid
+      );
+      if (!hasTargetPlayer) {
+        this.$message.error("目标玩家不存在");
+        return;
+      }
+
+      // 兜底所有玩家sheriff字段，避免undefined判断异常
+      allPlayers.forEach((p) => {
+        if (p.sheriff === undefined) p.sheriff = false;
+      });
+
+      if (targetPlayer.sheriff) {
+        // 取消当前玩家警徽
+        allPlayers.forEach((p) => {
+          p.sheriff = false;
+        });
+        this.$message.success(`已取消【${targetPlayer.name}】的警徽`);
+      } else {
+        // 清空其他玩家的警长标记，保证目标玩家为全局唯一警长
+        allPlayers.forEach((p) => {
+          if (p.uuid === targetPlayer.uuid) {
+            p.sheriff = true;
+          } else {
+            p.sheriff = false;
+          }
+        });
+        targetPlayer.sheriff = true;
+        this.$message.success(`已将【${targetPlayer.name}】设为本局警长`);
+      }
+
+      // 关键：把修改后的数组重新赋值回gameData，才能保存到云端
+      this.gameData.players = allPlayers;
+
+      // 保存云端，和toggleDead逻辑完全一致
+      await this.saveGame();
+      // 刷新页面最新数据
+      await this.refreshAll();
+    },
     onSkillConsumed(payload) {
       const { skillKey, newPlayerList } = payload;
       const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
@@ -647,7 +703,6 @@ export default {
       const roleCfg = this.roleConfigList.find(
         (r) => r.name === this.localPlayer.role
       );
-      console.log("🚀 ~ roleCfg:", roleCfg);
       if (!roleCfg || !this.localPlayer.skills?.length) return;
       const usedArr = this.localPlayer.usedSkillKeys || [];
       const availSkillList = this.localPlayer.skills.filter(
@@ -754,6 +809,7 @@ export default {
           ...player,
           roleId: cfg?.roleId || "",
           skills: cfg?.skills || [],
+          sheriff: player.sheriff ?? false,
         };
       });
       this.gameData.players = [god, ...newPlayers];
@@ -1001,6 +1057,7 @@ export default {
           thirdMark: "",
           skills: [],
           usedSkillKeys: [],
+          sheriff: false,
         };
       }
       this.saveLocal();
@@ -1056,6 +1113,9 @@ export default {
         this.gameData = res || {};
         this.gameRoles = this.gameData.roles || {};
         this.players = this.gameData.players || [];
+        this.players.forEach((p) => {
+          if (p.sheriff === undefined) p.sheriff = false;
+        });
         if (!Array.isArray(this.gameData.oneNightPlayers)) {
           this.gameData.oneNightPlayers = JSON.parse(
             JSON.stringify(this.players)
@@ -1199,6 +1259,7 @@ export default {
         dead: false,
         thirdMark: "",
         usedSkillKeys: [],
+        sheriff: false,
       });
       this.gameData.players = this.players;
       this.gameData.oneNightPlayers = JSON.parse(JSON.stringify(this.players));
@@ -1236,6 +1297,7 @@ export default {
           dead: false,
           thirdMark: "",
           usedSkillKeys: [],
+          sheriff: false,
         },
       ];
       // 初始化对局数据，存入房间密码
@@ -1286,6 +1348,7 @@ export default {
 
         // ========== 关键2：剔除已经被其他人抽走的身份（最新players列表） ==========
         this.players.forEach((p) => {
+          if (p.sheriff === undefined) p.sheriff = false;
           // 上帝身份不参与玩家抽取，跳过
           if (p.role && p.role !== this.GOD_NAME) {
             const idx = fullDeck.indexOf(p.role);
