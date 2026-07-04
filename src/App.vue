@@ -370,7 +370,7 @@
         </el-collapse-item>
 
         <!-- 上帝广播面板 -->
-        <el-collapse-item name="godBroadcast">
+        <el-collapse-item name="godBroadcast" v-if="gameData.hasGod">
           <template slot="title">
             {{ GOD_NAME }}广播<svg-icon
               icon-class="camera"
@@ -1226,8 +1226,9 @@ export default {
       ];
       // 初始化对局数据，存入房间密码
       this.gameData = {
-        judge: hasGod ? this.localPlayer.name : "",
+        judge: hasGod ? this.localPlayer.name : this.generateUUID(),
         hasThird: hasThird,
+        hasGod: hasGod,
         roles: gameRoles,
         enableGodPower: enableGodPower,
         roomPwd: roomPwd || "",

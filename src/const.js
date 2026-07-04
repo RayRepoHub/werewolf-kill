@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-05-24 17:16:56
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-01 15:48:27
+ * @LastEditTime: 2026-07-04 22:31:10
  * @Description: 常量配置
  */
 
@@ -18,7 +18,7 @@ export const API_SERVERS = {
     list: {
         local: {
             name: "局域网",
-            url: "http://192.168.0.102:3000",
+            url: "http://192.168.0.103:3000",
             desc: "仅限同一WiFi下使用"
         },
         vercel: {
