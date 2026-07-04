@@ -36,10 +36,31 @@
       <div class="form-section">
         <h3 class="section-title">2. 游戏附加设定</h3>
         <div class="setting-box">
-          <el-checkbox v-model="enableGodPower" class="setting-checkbox">
+          <!-- 是否需要上帝 -->
+          <el-checkbox
+            v-model="createForm.hasGod"
+            class="setting-checkbox"
+            :disabled="enableGodPower"
+          >
+            需要<span class="highlight-text"> {{ GOD_NAME }} </span>
+          </el-checkbox>
+          <!-- 是否由上帝指派身份 -->
+          <el-checkbox
+            v-model="enableGodPower"
+            class="setting-checkbox"
+            style="margin-top: 12px"
+          >
             由
             <span class="highlight-text">{{ GOD_NAME }}</span>
             指派身份
+          </el-checkbox>
+          <!-- 是否需要警长 -->
+          <el-checkbox
+            v-model="createForm.enableSheriff"
+            class="setting-checkbox"
+            style="margin-top: 12px"
+          >
+            需要<span class="highlight-text"> 警长 </span>
           </el-checkbox>
           <!-- 新增第三方阵营勾选框 -->
           <el-checkbox
@@ -48,14 +69,6 @@
             style="margin-top: 12px"
           >
             包含<span class="highlight-text"> 第三方阵营 </span>
-          </el-checkbox>
-          <el-checkbox
-            v-model="createForm.hasGod"
-            class="setting-checkbox"
-            style="margin-top: 12px"
-            :disabled="enableGodPower"
-          >
-            包含<span class="highlight-text"> {{ GOD_NAME }} </span>
           </el-checkbox>
         </div>
       </div>
@@ -120,6 +133,7 @@ export default {
         adminPwd: "",
         roomPwd: "",
         hasThird: false,
+        enableSheriff: false,
         hasGod: true,
       },
     };
@@ -141,6 +155,7 @@ export default {
         this.createForm.adminPwd = "";
         this.createForm.roomPwd = "";
         this.createForm.hasThird = false;
+        this.createForm.enableSheriff = false;
         this.createForm.hasGod = true;
         this.enableGodPower = false;
       }
@@ -175,7 +190,8 @@ export default {
     },
 
     async handleCreate() {
-      const { roles, adminPwd, roomPwd, hasThird, hasGod } = this.createForm;
+      const { roles, adminPwd, roomPwd, hasThird, hasGod, enableSheriff } =
+        this.createForm;
       // 新增强制校验：开启上帝派牌必须开启hasGod
       if (this.enableGodPower && !hasGod) {
         this.$message.error("若选择由上帝指派身份，对局必须包含上帝角色！");
@@ -255,6 +271,7 @@ export default {
         roomPwd: roomPwd.trim(),
         hasThird: hasThird,
         hasGod: hasGod,
+        enableSheriff: enableSheriff,
       });
       this.visibleLocal = false;
     },

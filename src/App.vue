@@ -191,6 +191,12 @@
                         {{ p.dead ? "设为存活" : "标记出局" }}
                       </el-dropdown-item>
                       <el-dropdown-item
+                        v-if="gameData.enableSheriff"
+                        @click.native="toggleSheriff(p)"
+                      >
+                        设为警长
+                      </el-dropdown-item>
+                      <el-dropdown-item
                         v-if="gameData.hasThird"
                         @click.native="openThirdMarkDialog(p)"
                       >
@@ -575,7 +581,7 @@ export default {
      * 是否展示玩家额外操作下拉菜单
      */
     showExtraPlayerOps() {
-      if (this.gameData.hasThird) {
+      if (this.gameData.hasThird || this.gameData.enableSheriff) {
         return true;
       } else {
         return false;
@@ -599,6 +605,7 @@ export default {
   },
 
   methods: {
+    toggleSheriff() {},
     onSkillConsumed(payload) {
       const { skillKey, newPlayerList } = payload;
       const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
@@ -1211,7 +1218,14 @@ export default {
      * 接收子组件参数，执行创建对局逻辑
      */
     async onCreateGame(params) {
-      const { gameRoles, enableGodPower, roomPwd, hasThird, hasGod } = params;
+      const {
+        gameRoles,
+        enableGodPower,
+        roomPwd,
+        hasThird,
+        hasGod,
+        enableSheriff,
+      } = params;
       this.createLoading = true;
       const initPlayers = [
         {
@@ -1229,6 +1243,7 @@ export default {
         judge: hasGod ? this.localPlayer.name : this.generateUUID(),
         hasThird: hasThird,
         hasGod: hasGod,
+        enableSheriff: enableSheriff,
         roles: gameRoles,
         enableGodPower: enableGodPower,
         roomPwd: roomPwd || "",
