@@ -140,16 +140,12 @@
               <div class="player-row">
                 <div class="player-name-row">
                   <span class="seq-tag">{{ p.seq || "旁" }}</span>
+                  <!-- 警长标签 -->
+                  <svg-icon v-if="p.sheriff" icon-class="sheriffBadge">
+                  </svg-icon>
                   <span class="player-name" :class="{ dead: p.dead }">
                     {{ p.name }}
                     <span v-if="p.dead" class="dead-suffix">(出局)</span>
-                  </span>
-                  <!-- 警长标签 -->
-                  <span
-                    v-if="p.sheriff && (isJudge || p.uuid === localPlayer.uuid)"
-                    class="sheriff-tag"
-                  >
-                    警长
                   </span>
                   <span
                     v-if="(p.role && isJudge) || p.role === GOD_NAME"
@@ -622,10 +618,10 @@ export default {
       const allPlayers = this.gameData.players;
 
       // 先检查目标玩家是否存在
-      const hasTargetPlayer = !!allPlayers.find(
+      const targetPlayerData = allPlayers.find(
         (item) => item.uuid === targetPlayer.uuid
       );
-      if (!hasTargetPlayer) {
+      if (!targetPlayerData) {
         this.$message.error("目标玩家不存在");
         return;
       }
@@ -637,9 +633,7 @@ export default {
 
       if (targetPlayer.sheriff) {
         // 取消当前玩家警徽
-        allPlayers.forEach((p) => {
-          p.sheriff = false;
-        });
+        targetPlayerData.sheriff = false;
         this.$message.success(`已取消【${targetPlayer.name}】的警徽`);
       } else {
         // 清空其他玩家的警长标记，保证目标玩家为全局唯一警长
@@ -650,7 +644,6 @@ export default {
             p.sheriff = false;
           }
         });
-        targetPlayer.sheriff = true;
         this.$message.success(`已将【${targetPlayer.name}】设为本局警长`);
       }
 
