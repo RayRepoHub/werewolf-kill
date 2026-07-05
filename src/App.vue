@@ -141,14 +141,22 @@
                 <div class="player-name-row">
                   <span class="seq-tag">{{ p.seq || "旁" }}</span>
                   <!-- 警长标签 -->
-                  <svg-icon v-if="p.sheriff" icon-class="sheriffBadge">
+                  <svg-icon
+                    v-if="p.sheriff"
+                    icon-class="sheriffBadge"
+                    style="font-size: 24px"
+                  >
                   </svg-icon>
                   <span class="player-name" :class="{ dead: p.dead }">
                     {{ p.name }}
                     <span v-if="p.dead" class="dead-suffix">(出局)</span>
                   </span>
                   <span
-                    v-if="(p.role && isJudge) || p.role === GOD_NAME"
+                    v-if="
+                      (p.role && isJudge) ||
+                      p.role === GOD_NAME ||
+                      (p.dead && p.role)
+                    "
                     class="role-tag"
                   >
                     {{ p.role }}
@@ -216,6 +224,16 @@
                     {{ p.dead ? "设为存活" : "标记出局" }}
                   </el-button>
                 </div>
+
+                <!-- 本人自爆按钮 -->
+                <el-button
+                  v-if="p.uuid === localPlayer.uuid && !p.dead && !isJudge"
+                  size="mini"
+                  type="danger"
+                  @click="selfBoom(p)"
+                >
+                  自爆
+                </el-button>
 
                 <!-- 普通玩家备注下拉：禁止给自己、禁止给上帝 -->
                 <el-select
@@ -608,6 +626,36 @@ export default {
   },
 
   methods: {
+    /**
+     * 玩家自爆：自己标记出局，身份全员可见
+     */
+    async selfBoom(player) {
+      await this.$confirm(
+        "确认自爆？自爆后你将直接出局，所有玩家都能看见你的身份",
+        "自爆确认",
+        {
+          confirmButtonText: "确认自爆",
+          cancelButtonText: "取消",
+          type: "danger",
+          center: true,
+          showClose: false,
+          closeOnClickModal: false,
+        }
+      ).catch(() => {
+        return;
+      });
+
+      // 拉取最新数据
+      await this.getGame();
+      const target = this.players.find((item) => item.uuid === player.uuid);
+      if (!target) return;
+
+      // 标记出局
+      target.dead = true;
+      await this.saveGame();
+      await this.refreshAll();
+      this.$message.success("自爆成功，你已出局，身份公开");
+    },
     /**
      * 设置/取消警长，全局仅允许一名警长
      * @param {Object} targetPlayer 目标玩家对象
