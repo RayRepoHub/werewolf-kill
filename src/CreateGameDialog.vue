@@ -209,6 +209,15 @@ export default {
         this.createForm.hasGod = true;
       }
     },
+    "createForm.roles": {
+      handler() {
+        const validIds = this.boomRoleOptions.map((r) => r.roleId);
+        this.createForm.boomRoleList = this.createForm.boomRoleList.filter(
+          (id) => validIds.includes(id)
+        );
+      },
+      deep: true,
+    },
   },
   methods: {
     handleClose() {
@@ -232,6 +241,8 @@ export default {
         hasGod,
         enableGodPower,
         enableSheriff,
+        hasBoomRole,
+        boomRoleList,
       } = this.createForm;
       // 新增强制校验：开启上帝派牌必须开启hasGod
       if (enableGodPower && !hasGod) {
@@ -268,11 +279,8 @@ export default {
       }
 
       // 校验自爆身份配置
-      if (this.createForm.hasBoomRole) {
-        if (
-          !this.createForm.boomRoleList ||
-          this.createForm.boomRoleList.length === 0
-        ) {
+      if (hasBoomRole) {
+        if (!boomRoleList || boomRoleList.length === 0) {
           this.createLoading = false;
           this.$message.warning(
             "开启可自爆功能时，请至少选择一种允许自爆的身份！"
@@ -291,8 +299,8 @@ export default {
       const thirdText = hasThird
         ? "· 本局包含第三方阵营"
         : "· 本局无第三方阵营";
-      const boomText = this.createForm.hasBoomRole
-        ? `· 本局允许自爆的身份：${this.createForm.boomRoleList
+      const boomText = hasBoomRole
+        ? `· 本局允许自爆的身份：${boomRoleList
             .map(
               (id) => this.boomRoleOptions.find((r) => r.roleId === id)?.name
             )
@@ -342,8 +350,8 @@ export default {
         hasThird: hasThird,
         hasGod: hasGod,
         enableSheriff: enableSheriff,
-        hasBoomRole: this.createForm.hasBoomRole,
-        boomRoleList: this.createForm.boomRoleList,
+        hasBoomRole: hasBoomRole,
+        boomRoleList: boomRoleList,
       });
       this.visibleLocal = false;
     },
