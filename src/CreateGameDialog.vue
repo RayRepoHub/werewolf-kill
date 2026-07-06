@@ -70,26 +70,26 @@
           >
             包含<span class="highlight-text"> 第三方阵营 </span>
           </el-checkbox>
-          <!-- 是否包含可自爆角色 -->
+          <!-- 是否包含可自爆身份 -->
           <el-checkbox
             v-model="createForm.hasBoomRole"
             class="setting-checkbox"
             style="margin-top: 12px"
           >
-            包含<span class="highlight-text">可自爆角色</span>
+            包含<span class="highlight-text"> 可自爆身份 </span>
           </el-checkbox>
-          <!-- 多选身份选择器，仅勾选可自爆角色时显示 -->
+          <!-- 多选身份选择器，仅勾选可自爆身份时显示 -->
           <el-select
             v-if="createForm.hasBoomRole"
             v-model="createForm.boomRoleList"
             multiple
             placeholder="选择本局允许自爆的身份"
+            no-data-text="请先勾选身份"
             style="width: 100%; margin-top: 12px"
           >
             <!-- 只展示上方已勾选启用的身份 -->
             <el-option
-              v-for="role in roleConfigList"
-              v-show="createForm.roles[role.name]?.enabled"
+              v-for="role in boomRoleOptions"
               :key="role.roleId"
               :label="role.name"
               :value="role.roleId"
@@ -173,6 +173,11 @@ export default {
       set(val) {
         this.$emit("update:visible", val);
       },
+    },
+    boomRoleOptions() {
+      return this.roleConfigList.filter((role) => {
+        return this.createForm.roles[role.name]?.enabled;
+      });
     },
   },
   watch: {
@@ -263,7 +268,7 @@ export default {
         ) {
           this.createLoading = false;
           this.$message.warning(
-            "开启可自爆角色时，请至少选择一种允许自爆的身份！"
+            "开启可自爆功能时，请至少选择一种允许自爆的身份！"
           );
           return;
         }
