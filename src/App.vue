@@ -1233,6 +1233,7 @@ export default {
           this.gameStatus.joined = false;
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
+          this.localPlayer.skillUsed = false;
           this.localPlayer.dead = false;
           this.saveLocal();
 
@@ -1557,6 +1558,7 @@ export default {
           // 清空本地对局信息
           this.localPlayer.role = "";
           this.localPlayer.seq = 0;
+          this.localPlayer.skillUsed = false;
           this.localPlayer.dead = false;
           this.localPlayer.note = "";
           this.saveLocal();
