@@ -240,7 +240,9 @@
                     p.uuid === localPlayer.uuid &&
                     !p.dead &&
                     !isJudge &&
-                    localPlayer.role
+                    localPlayer.role &&
+                    gameData.boomRoleList &&
+                    gameData.boomRoleList.includes(localPlayer.roleId)
                   "
                   size="mini"
                   type="danger"
@@ -1346,6 +1348,8 @@ export default {
         hasThird,
         hasGod,
         enableSheriff,
+        hasBoomRole,
+        boomRoleList,
       } = params;
       this.createLoading = true;
       const initPlayers = [
@@ -1375,6 +1379,8 @@ export default {
         msg: this.judgeInitMsg,
         votes: {},
         abandons: [],
+        hasBoomRole: hasBoomRole,
+        boomRoleList: boomRoleList,
       };
       await this.saveGame();
       this.createLoading = false;

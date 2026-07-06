@@ -70,6 +70,31 @@
           >
             包含<span class="highlight-text"> 第三方阵营 </span>
           </el-checkbox>
+          <!-- 是否包含可自爆角色 -->
+          <el-checkbox
+            v-model="createForm.hasBoomRole"
+            class="setting-checkbox"
+            style="margin-top: 12px"
+          >
+            包含<span class="highlight-text">可自爆角色</span>
+          </el-checkbox>
+          <!-- 多选身份选择器，仅勾选可自爆角色时显示 -->
+          <el-select
+            v-if="createForm.hasBoomRole"
+            v-model="createForm.boomRoleList"
+            multiple
+            placeholder="选择本局允许自爆的身份"
+            style="width: 100%; margin-top: 12px"
+          >
+            <!-- 只展示上方已勾选启用的身份 -->
+            <el-option
+              v-for="role in roleConfigList"
+              v-show="createForm.roles[role.name]?.enabled"
+              :key="role.roleId"
+              :label="role.name"
+              :value="role.roleId"
+            />
+          </el-select>
         </div>
       </div>
 
@@ -135,6 +160,8 @@ export default {
         hasThird: false,
         enableSheriff: false,
         hasGod: true,
+        hasBoomRole: false,
+        boomRoleList: [],
       },
     };
   },
@@ -158,6 +185,8 @@ export default {
         this.createForm.enableSheriff = false;
         this.createForm.hasGod = true;
         this.enableGodPower = false;
+        this.createForm.hasBoomRole = false;
+        this.createForm.boomRoleList = [];
       }
     },
     enableGodPower(val) {
@@ -226,6 +255,20 @@ export default {
         return;
       }
 
+      // 校验自爆身份配置
+      if (this.createForm.hasBoomRole) {
+        if (
+          !this.createForm.boomRoleList ||
+          this.createForm.boomRoleList.length === 0
+        ) {
+          this.createLoading = false;
+          this.$message.warning(
+            "开启可自爆角色时，请至少选择一种允许自爆的身份！"
+          );
+          return;
+        }
+      }
+
       const modeText = this.enableGodPower
         ? `· 身份派发方式：由${this.GOD_NAME}指派身份`
         : "· 身份派发方式：玩家自行抽取身份牌";
@@ -272,6 +315,8 @@ export default {
         hasThird: hasThird,
         hasGod: hasGod,
         enableSheriff: enableSheriff,
+        hasBoomRole: this.createForm.hasBoomRole,
+        boomRoleList: this.createForm.boomRoleList,
       });
       this.visibleLocal = false;
     },
