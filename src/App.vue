@@ -172,6 +172,18 @@
                   </span>
                   <span
                     v-if="
+                      ((p.role && isJudge) ||
+                        p.role === GOD_NAME ||
+                        (p.dead && p.role)) &&
+                      p.oneNightRole &&
+                      p.oneNightRole !== p.role
+                    "
+                    class="role-tag"
+                  >
+                    {{ p.oneNightRole }}（最终）
+                  </span>
+                  <span
+                    v-if="
                       gameData.hasThird &&
                       ((isJudge && p.thirdMark) ||
                         (p.thirdMark && localPlayer.thirdMark))
@@ -1175,14 +1187,23 @@ export default {
         this.gameData = res || {};
         this.gameRoles = this.gameData.roles || {};
         this.players = this.gameData.players || [];
-        this.players.forEach((p) => {
-          if (p.sheriff === undefined) p.sheriff = false;
-        });
+
         if (!Array.isArray(this.gameData.oneNightPlayers)) {
           this.gameData.oneNightPlayers = JSON.parse(
             JSON.stringify(this.players)
           );
         }
+
+        const oneNightMap = {};
+        this.gameData.oneNightPlayers.forEach((np) => {
+          oneNightMap[np.uuid] = np.role;
+        });
+
+        // 仅一次遍历，同时处理sheriff兜底、oneNightRole赋值
+        this.players.forEach((p) => {
+          if (p.sheriff === undefined) p.sheriff = false;
+          p.oneNightRole = oneNightMap[p.uuid] ?? "";
+        });
 
         // 玩家排序：上帝优先 > 有序号玩家 > 旁观者
         this.players.sort((a, b) => {
