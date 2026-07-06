@@ -40,13 +40,13 @@
           <el-checkbox
             v-model="createForm.hasGod"
             class="setting-checkbox"
-            :disabled="enableGodPower"
+            :disabled="createForm.enableGodPower"
           >
             需要<span class="highlight-text"> {{ GOD_NAME }} </span>
           </el-checkbox>
           <!-- 是否由上帝指派身份 -->
           <el-checkbox
-            v-model="enableGodPower"
+            v-model="createForm.enableGodPower"
             class="setting-checkbox"
             style="margin-top: 12px"
           >
@@ -60,7 +60,7 @@
             class="setting-checkbox"
             style="margin-top: 12px"
           >
-            需要<span class="highlight-text"> 警长 </span>
+            评选<span class="highlight-text"> 警长 </span>
           </el-checkbox>
           <!-- 新增第三方阵营勾选框 -->
           <el-checkbox
@@ -151,7 +151,6 @@ export default {
       GOD_NAME,
       ADMIN_PASSWORD,
       createLoading: false,
-      enableGodPower: false,
       // 对局设定表单
       createForm: {
         roles: {},
@@ -160,6 +159,7 @@ export default {
         hasThird: false,
         enableSheriff: false,
         hasGod: true,
+        enableGodPower: false,
         hasBoomRole: false,
         boomRoleList: [],
       },
@@ -189,12 +189,12 @@ export default {
         this.createForm.hasThird = false;
         this.createForm.enableSheriff = false;
         this.createForm.hasGod = true;
-        this.enableGodPower = false;
+        this.createForm.enableGodPower = false;
         this.createForm.hasBoomRole = false;
         this.createForm.boomRoleList = [];
       }
     },
-    enableGodPower(val) {
+    "createForm.enableGodPower"(val) {
       if (val) {
         // 开启上帝派牌 → 必须开启hasGod
         this.createForm.hasGod = true;
@@ -202,7 +202,7 @@ export default {
     },
     // 监听hasGod，当enableGodPower为true时，禁止手动取消hasGod
     "createForm.hasGod"(newVal) {
-      if (this.enableGodPower && newVal === false) {
+      if (this.createForm.enableGodPower && newVal === false) {
         this.$message.warning(
           "开启上帝指派身份时，本局必须包含上帝角色，无法取消"
         );
@@ -224,10 +224,17 @@ export default {
     },
 
     async handleCreate() {
-      const { roles, adminPwd, roomPwd, hasThird, hasGod, enableSheriff } =
-        this.createForm;
+      const {
+        roles,
+        adminPwd,
+        roomPwd,
+        hasThird,
+        hasGod,
+        enableGodPower,
+        enableSheriff,
+      } = this.createForm;
       // 新增强制校验：开启上帝派牌必须开启hasGod
-      if (this.enableGodPower && !hasGod) {
+      if (enableGodPower && !hasGod) {
         this.$message.error("若选择由上帝指派身份，对局必须包含上帝角色！");
         return;
       }
@@ -274,12 +281,24 @@ export default {
         }
       }
 
-      const modeText = this.enableGodPower
+      const godText = hasGod
+        ? `· 本局需要${this.GOD_NAME}`
+        : `· 本局无${this.GOD_NAME}`;
+      const modeText = enableGodPower
         ? `· 身份派发方式：由${this.GOD_NAME}指派身份`
         : "· 身份派发方式：玩家自行抽取身份牌";
+      const sheriffText = enableSheriff ? "· 本局需要评选警长" : "· 本局无警长";
       const thirdText = hasThird
         ? "· 本局包含第三方阵营"
         : "· 本局无第三方阵营";
+      const boomText = this.createForm.hasBoomRole
+        ? `· 本局允许自爆的身份：${this.createForm.boomRoleList
+            .map(
+              (id) => this.boomRoleOptions.find((r) => r.roleId === id)?.name
+            )
+            .filter(Boolean)
+            .join("、")}`
+        : "· 本局无可自爆的身份";
 
       const htmlContent = `
     <div style="line-height: 1.8; text-align: left;">
@@ -289,9 +308,12 @@ export default {
       ${roleHtmlList.join("")}
       <div>· 总人数：${total}人</div>
       <br/>
-      <div><strong>【派牌规则】</strong></div>
+      <div><strong>【附加设定】</strong></div>
+      <div>${godText}</div>
       <div>${modeText}</div>
+      <div>${sheriffText}</div>
       <div>${thirdText}</div>
+      <div>${boomText}</div>
       <br/>
       <div>确认创建该对局吗？</div>
     </div>
@@ -315,7 +337,7 @@ export default {
       // 把对局设定表单数据一并传给父组件
       this.$emit("create", {
         gameRoles,
-        enableGodPower: this.enableGodPower,
+        enableGodPower: enableGodPower,
         roomPwd: roomPwd.trim(),
         hasThird: hasThird,
         hasGod: hasGod,
