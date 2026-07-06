@@ -147,9 +147,18 @@
                     style="font-size: 24px"
                   >
                   </svg-icon>
+                  <!-- 自爆标签 -->
+                  <svg-icon
+                    icon-class="bomb"
+                    v-if="p.selfBomb"
+                    style="font-size: 24px"
+                    :class="{ dead: p.dead }"
+                  />
                   <span class="player-name" :class="{ dead: p.dead }">
                     {{ p.name }}
-                    <span v-if="p.dead" class="dead-suffix">(出局)</span>
+                    <span v-if="p.dead" class="dead-suffix">
+                      ({{ p.selfBomb ? "自爆" : "出局" }})
+                    </span>
                   </span>
                   <span
                     v-if="
@@ -227,7 +236,12 @@
 
                 <!-- 本人自爆按钮 -->
                 <el-button
-                  v-if="p.uuid === localPlayer.uuid && !p.dead && !isJudge"
+                  v-if="
+                    p.uuid === localPlayer.uuid &&
+                    !p.dead &&
+                    !isJudge &&
+                    localPlayer.role
+                  "
                   size="mini"
                   type="danger"
                   @click="selfBoom(p)"
@@ -640,21 +654,26 @@ export default {
           center: true,
           showClose: false,
           closeOnClickModal: false,
+          customClass: "msg-box",
         }
-      ).catch(() => {
-        return;
-      });
+      )
+        .then(async () => {
+          // 拉取最新数据
+          await this.getGame();
+          const target = this.players.find((item) => item.uuid === player.uuid);
+          if (!target) return;
 
-      // 拉取最新数据
-      await this.getGame();
-      const target = this.players.find((item) => item.uuid === player.uuid);
-      if (!target) return;
-
-      // 标记出局
-      target.dead = true;
-      await this.saveGame();
-      await this.refreshAll();
-      this.$message.success("自爆成功，你已出局，身份公开");
+          // 新增：标记自爆字段
+          target.selfBomb = true;
+          // 标记出局
+          target.dead = true;
+          await this.saveGame();
+          await this.refreshAll();
+          this.$message.success("自爆成功，你已出局，身份公开");
+        })
+        .catch(() => {
+          // 消除Promise报错
+        });
     },
     /**
      * 设置/取消警长，全局仅允许一名警长
@@ -1818,7 +1837,6 @@ export default {
         // 出局后缀小字 (出局)
         .dead-suffix {
           color: #f5222d;
-          font-size: 13px;
         }
 
         // 上帝可见身份标签
