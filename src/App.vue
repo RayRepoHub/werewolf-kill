@@ -100,6 +100,7 @@
                 }}
                 <svg-icon icon-class="click-skill" />
                 <span v-if="localPlayer.skillUsed"> (已全部使用) </span>
+                <span v-else-if="localPlayer.dead"> (已出局，无法使用) </span>
               </span>
             </div>
           </div>
@@ -840,6 +841,10 @@ export default {
       );
       if (this.localPlayer.skillUsed) {
         this.$message.info("本局所有技能均已使用完毕");
+        return;
+      }
+      if (this.localPlayer.dead) {
+        this.$message.info("你已出局，无法使用技能");
         return;
       }
       this.currentSkillKey = availSkillList[0];
