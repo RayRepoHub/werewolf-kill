@@ -95,6 +95,32 @@
               :value="role.roleId"
             />
           </el-select>
+
+          <!-- 是否包含可主动亮牌身份 -->
+          <el-checkbox
+            v-model="createForm.hasShowRole"
+            class="setting-checkbox"
+            style="margin-top: 12px"
+          >
+            包含<span class="highlight-text"> 可主动亮牌身份 </span>
+          </el-checkbox>
+          <!-- 多选身份选择器，仅勾选可亮牌身份时显示 -->
+          <el-select
+            v-if="createForm.hasShowRole"
+            v-model="createForm.showRoleList"
+            multiple
+            placeholder="选择本局允许主动亮牌的身份"
+            no-data-text="请先勾选身份"
+            style="width: 100%; margin-top: 12px"
+          >
+            <!-- 只展示上方已勾选启用的身份 -->
+            <el-option
+              v-for="role in showRoleOptions"
+              :key="role.roleId"
+              :label="role.name"
+              :value="role.roleId"
+            />
+          </el-select>
         </div>
       </div>
 
@@ -162,6 +188,8 @@ export default {
         enableGodPower: false,
         hasBoomRole: false,
         boomRoleList: [],
+        hasShowRole: false,
+        showRoleList: [],
       },
     };
   },
@@ -179,6 +207,11 @@ export default {
         return this.createForm.roles[role.name]?.enabled;
       });
     },
+    showRoleOptions() {
+      return this.roleConfigList.filter((role) => {
+        return this.createForm.roles[role.name]?.enabled;
+      });
+    },
   },
   watch: {
     visible(val) {
@@ -192,6 +225,8 @@ export default {
         this.createForm.enableGodPower = false;
         this.createForm.hasBoomRole = false;
         this.createForm.boomRoleList = [];
+        this.createForm.hasShowRole = false;
+        this.createForm.showRoleList = [];
       }
     },
     "createForm.enableGodPower"(val) {
@@ -214,6 +249,11 @@ export default {
         const validIds = this.boomRoleOptions.map((r) => r.roleId);
         this.createForm.boomRoleList = this.createForm.boomRoleList.filter(
           (id) => validIds.includes(id)
+        );
+        // 新增亮牌身份过滤
+        const validShowIds = this.showRoleOptions.map((r) => r.roleId);
+        this.createForm.showRoleList = this.createForm.showRoleList.filter(
+          (id) => validShowIds.includes(id)
         );
       },
       deep: true,
@@ -243,6 +283,8 @@ export default {
         enableSheriff,
         hasBoomRole,
         boomRoleList,
+        hasShowRole,
+        showRoleList,
       } = this.createForm;
       // 新增强制校验：开启上帝派牌必须开启hasGod
       if (enableGodPower && !hasGod) {
@@ -289,6 +331,17 @@ export default {
         }
       }
 
+      // 校验亮牌身份配置
+      if (hasShowRole) {
+        if (!showRoleList || showRoleList.length === 0) {
+          this.createLoading = false;
+          this.$message.warning(
+            "开启主动亮牌功能时，请至少选择一种允许亮牌的身份！"
+          );
+          return;
+        }
+      }
+
       const godText = hasGod
         ? `· 本局需要${this.GOD_NAME}`
         : `· 本局无${this.GOD_NAME}`;
@@ -307,6 +360,14 @@ export default {
             .filter(Boolean)
             .join("、")}`
         : "· 本局无可自爆的身份";
+      const showText = hasShowRole
+        ? `· 本局允许主动亮牌的身份：${showRoleList
+            .map(
+              (id) => this.showRoleOptions.find((r) => r.roleId === id)?.name
+            )
+            .filter(Boolean)
+            .join("、")}`
+        : "· 本局无可主动亮牌的身份";
 
       const htmlContent = `
     <div style="line-height: 1.8; text-align: left;">
@@ -322,6 +383,7 @@ export default {
       <div>${sheriffText}</div>
       <div>${thirdText}</div>
       <div>${boomText}</div>
+      <div>${showText}</div>
       <br/>
       <div>确认创建该对局吗？</div>
     </div>
@@ -352,6 +414,8 @@ export default {
         enableSheriff: enableSheriff,
         hasBoomRole: hasBoomRole,
         boomRoleList: boomRoleList,
+        hasShowRole: hasShowRole,
+        showRoleList: showRoleList,
       });
       this.visibleLocal = false;
     },

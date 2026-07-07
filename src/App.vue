@@ -154,6 +154,12 @@
                     style="font-size: 24px"
                     :class="{ dead: p.dead }"
                   />
+                  <!-- 新增亮牌标签 -->
+                  <svg-icon
+                    icon-class="showCard"
+                    v-if="p.showCard"
+                    style="font-size: 24px"
+                  />
                   <span class="player-name" :class="{ dead: p.dead }">
                     {{ p.name }}
                     <span v-if="p.dead" class="dead-suffix">
@@ -164,7 +170,8 @@
                     v-if="
                       (p.role && isJudge) ||
                       p.role === GOD_NAME ||
-                      (p.dead && p.role)
+                      (p.dead && p.role) ||
+                      p.showCard
                     "
                     class="role-tag"
                   >
@@ -174,6 +181,7 @@
                     v-if="
                       ((p.role && isJudge) ||
                         p.role === GOD_NAME ||
+                        p.showCard ||
                         (p.dead && p.role)) &&
                       p.oneNightRole &&
                       p.oneNightRole !== p.role
@@ -261,6 +269,24 @@
                   @click="selfBoom(p)"
                 >
                   自爆
+                </el-button>
+
+                <!-- 本人主动亮牌按钮 -->
+                <el-button
+                  v-if="
+                    p.uuid === localPlayer.uuid &&
+                    !p.dead &&
+                    !isJudge &&
+                    localPlayer.role &&
+                    gameData.hasShowRole &&
+                    gameData.showRoleList.includes(localPlayer.roleId) &&
+                    !p.showCard
+                  "
+                  size="mini"
+                  type="primary"
+                  @click="selfShowCard(p)"
+                >
+                  亮牌
                 </el-button>
 
                 <!-- 普通玩家备注下拉：禁止给自己、禁止给上帝 -->
@@ -654,6 +680,39 @@ export default {
   },
 
   methods: {
+    /**
+     * 玩家主动亮牌：仅公开身份，不会出局死亡
+     */
+    async selfShowCard(player) {
+      await this.$confirm(
+        "确认主动亮牌？亮牌后所有玩家都能看见你的身份，本局永久生效，不会出局",
+        "亮牌确认",
+        {
+          confirmButtonText: "确认亮牌",
+          cancelButtonText: "取消",
+          type: "info",
+          center: true,
+          showClose: false,
+          closeOnClickModal: false,
+          customClass: "msg-box",
+        }
+      )
+        .then(async () => {
+          // 拉取最新数据
+          await this.getGame();
+          const target = this.players.find((item) => item.uuid === player.uuid);
+          if (!target) return;
+
+          // 仅标记亮牌，不修改dead、selfBomb
+          target.showCard = true;
+          await this.saveGame();
+          await this.refreshAll();
+          this.$message.success("亮牌成功，所有人可查看你的身份，你保持存活");
+        })
+        .catch(() => {
+          // 消除Promise报错
+        });
+    },
     /**
      * 玩家自爆：自己标记出局，身份全员可见
      */
@@ -1129,6 +1188,7 @@ export default {
           skills: [],
           usedSkillKeys: [],
           sheriff: false,
+          showCard: false,
         };
       }
       this.saveLocal();
@@ -1341,6 +1401,7 @@ export default {
         thirdMark: "",
         usedSkillKeys: [],
         sheriff: false,
+        showCard: false,
       });
       this.gameData.players = this.players;
       this.gameData.oneNightPlayers = JSON.parse(JSON.stringify(this.players));
@@ -1369,6 +1430,8 @@ export default {
         enableSheriff,
         hasBoomRole,
         boomRoleList,
+        hasShowRole,
+        showRoleList,
       } = params;
       this.createLoading = true;
       const initPlayers = [
@@ -1381,6 +1444,7 @@ export default {
           thirdMark: "",
           usedSkillKeys: [],
           sheriff: false,
+          showCard: false,
         },
       ];
       // 初始化对局数据，存入房间密码
@@ -1400,6 +1464,8 @@ export default {
         abandons: [],
         hasBoomRole: hasBoomRole,
         boomRoleList: boomRoleList,
+        hasShowRole: hasShowRole,
+        showRoleList: showRoleList,
       };
       await this.saveGame();
       this.createLoading = false;
@@ -1434,6 +1500,7 @@ export default {
         // ========== 关键2：剔除已经被其他人抽走的身份（最新players列表） ==========
         this.players.forEach((p) => {
           if (p.sheriff === undefined) p.sheriff = false;
+          if (p.showCard === undefined) p.showCard = false;
           // 上帝身份不参与玩家抽取，跳过
           if (p.role && p.role !== this.GOD_NAME) {
             const idx = fullDeck.indexOf(p.role);
