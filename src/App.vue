@@ -741,24 +741,21 @@ export default {
       const me = this.players.find((p) => p.uuid === this.localPlayer.uuid);
       if (!me) return;
 
-      // 互换身份技能不记录已使用，其余技能正常记录
-      if (skillKey !== "rob_swap_player") {
-        me.usedSkillKeys = me.usedSkillKeys || [];
-        if (!me.usedSkillKeys.includes(skillKey)) {
-          me.usedSkillKeys.push(skillKey);
-        }
-        const roleCfg = this.roleConfigList.find(
-          (r) => r.roleId === this.localPlayer.roleId
-        );
-        if (roleCfg) {
-          if (roleCfg.singleSkill && me.usedSkillKeys.length > 0) {
-            me.skillUsed = true;
-          } else if (
-            !roleCfg.singleSkill &&
-            me.usedSkillKeys.length === roleCfg.skills.length
-          ) {
-            me.skillUsed = true;
-          }
+      me.usedSkillKeys = me.usedSkillKeys || [];
+      if (!me.usedSkillKeys.includes(skillKey)) {
+        me.usedSkillKeys.push(skillKey);
+      }
+      const roleCfg = this.roleConfigList.find(
+        (r) => r.roleId === this.localPlayer.roleId
+      );
+      if (roleCfg) {
+        if (roleCfg.singleSkill && me.usedSkillKeys.length > 0) {
+          me.skillUsed = true;
+        } else if (
+          !roleCfg.singleSkill &&
+          me.usedSkillKeys.length === roleCfg.skills.length
+        ) {
+          me.skillUsed = true;
         }
       }
 
@@ -1475,10 +1472,10 @@ export default {
         this.saveLocal();
 
         // 把新身份数据提交到后端存储
-        await this.saveGame();
         this.gameData.oneNightPlayers = JSON.parse(
           JSON.stringify(this.players)
         );
+        await this.saveGame();
 
         // ========== 关键3：保存完成后再次刷新 ==========
         // 同步本次提交后其他玩家的最新状态，刷新本地身份池
