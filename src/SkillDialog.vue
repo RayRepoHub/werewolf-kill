@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-18 00:03:04
+ * @LastEditTime: 2026-07-18 00:15:50
  * @Description: 请输入
 -->
 <template>
@@ -62,12 +62,22 @@
 
     <!-- 互换身份 rob_swap_player -->
     <div v-else-if="currentSkillKey === 'rob_swap_player'">
-      <p style="margin-bottom: 12px">请输入你要互换身份的玩家序号</p>
-      <el-input
-        v-model="checkSeq"
-        placeholder="输入数字序号"
-        type="number"
-      ></el-input>
+      <p style="margin-bottom: 12px">
+        请选择要互换身份的玩家（不可选择自己、上帝）
+      </p>
+      <el-select
+        v-model.number="checkSeq"
+        placeholder="选择目标玩家"
+        style="width: 280px"
+        clearable
+      >
+        <el-option
+          v-for="item in validSwapPlayerList"
+          :key="item.seq"
+          :label="`${item.seq}号 - ${item.name}`"
+          :value="item.seq"
+        ></el-option>
+      </el-select>
     </div>
 
     <!-- 观看自己现在的身份 check_self_final -->
@@ -372,7 +382,7 @@ export default {
       } else if (activeSkill === "rob_swap_player") {
         targetSeq = Number(this.checkSeq);
         if (!targetSeq || targetSeq <= 0) {
-          this.$message.warning("请输入合法玩家序号");
+          this.$message.warning("请选择一名玩家");
           isValid = false;
         } else if (targetSeq === this.targetPlayer.seq) {
           this.$message.warning("不能选择自己互换身份");
