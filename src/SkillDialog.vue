@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-01 22:48:59
+ * @LastEditTime: 2026-07-17 23:54:35
  * @Description: 请输入
 -->
 <template>
@@ -80,22 +80,36 @@
     <!-- 交换两名场上玩家身份 swap_two_players -->
     <div v-else-if="currentSkillKey === 'swap_two_players'">
       <p style="margin-bottom: 12px">
-        请输入两名需要交换身份的玩家序号（不可包含自己）
+        请选择两名需要交换身份的玩家（不可包含自己、上帝）
       </p>
       <div style="display: flex; gap: 12px; align-items: center">
-        <el-input
-          v-model="checkSeq"
-          placeholder="玩家1序号"
-          type="number"
-          style="width: 180px"
-        ></el-input>
+        <el-select
+          v-model.number="checkSeq"
+          placeholder="玩家1"
+          style="width: 220px"
+          clearable
+        >
+          <el-option
+            v-for="item in validSwapPlayerList"
+            :key="item.seq"
+            :label="`${item.seq}号 - ${item.name}`"
+            :value="item.seq"
+          ></el-option>
+        </el-select>
         <span> ↔ </span>
-        <el-input
-          v-model="secondSeq"
-          placeholder="玩家2序号"
-          type="number"
-          style="width: 180px"
-        ></el-input>
+        <el-select
+          v-model.number="secondSeq"
+          placeholder="玩家2"
+          style="width: 220px"
+          clearable
+        >
+          <el-option
+            v-for="item in validSwapPlayerList"
+            :key="item.seq"
+            :label="`${item.seq}号 - ${item.name}`"
+            :value="item.seq"
+          ></el-option>
+        </el-select>
       </div>
     </div>
 
@@ -247,6 +261,18 @@ export default {
   },
   computed: {
     /**
+     * 可以两两交换的玩家列表
+     */
+    validSwapPlayerList() {
+      // 过滤：排除自己、上帝、无序号旁观者
+      return this.allPlayers.filter((p) => {
+        if (!p.seq) return false;
+        if (p.role === this.GOD_NAME) return false;
+        if (p.uuid === this.targetPlayer.uuid) return false;
+        return true;
+      });
+    },
+    /**
      * 发动过的技能
      */
     usedSkillKeys() {
@@ -385,10 +411,10 @@ export default {
         const num2 = Number(this.secondSeq);
         // 基础数字校验
         if (!num1 || num1 <= 0 || !num2 || num2 <= 0) {
-          this.$message.warning("两个输入框都需要填写合法正整数序号");
+          this.$message.warning("请完整选择两名玩家");
           isValid = false;
         } else if (num1 === num2) {
-          this.$message.warning("两名玩家序号不能相同");
+          this.$message.warning("两名玩家不能是同一个人");
           isValid = false;
         } else if (
           num1 === this.targetPlayer.seq ||
@@ -400,7 +426,7 @@ export default {
           const p1 = this.allPlayers.find((p) => p.seq === num1);
           const p2 = this.allPlayers.find((p) => p.seq === num2);
           if (!p1 || !p2) {
-            this.$message.error("存在无效玩家序号");
+            this.$message.error("选中的玩家不存在");
             isValid = false;
           } else {
             this.$alert(`玩家${num1}和玩家${num2}的身份已交换`, "交换成功", {
