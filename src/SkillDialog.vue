@@ -2,7 +2,7 @@
  * @Author: YangRui
  * @Date: 2026-06-28 22:24:08
  * @LastEditors: YangRui
- * @LastEditTime: 2026-07-17 23:54:35
+ * @LastEditTime: 2026-07-18 00:03:04
  * @Description: 请输入
 -->
 <template>
@@ -90,7 +90,9 @@
           clearable
         >
           <el-option
-            v-for="item in validSwapPlayerList"
+            v-for="item in validSwapPlayerList.filter(
+              (item) => item.seq !== secondSeq
+            )"
             :key="item.seq"
             :label="`${item.seq}号 - ${item.name}`"
             :value="item.seq"
@@ -104,7 +106,9 @@
           clearable
         >
           <el-option
-            v-for="item in validSwapPlayerList"
+            v-for="item in validSwapPlayerList.filter(
+              (item) => item.seq !== checkSeq
+            )"
             :key="item.seq"
             :label="`${item.seq}号 - ${item.name}`"
             :value="item.seq"
